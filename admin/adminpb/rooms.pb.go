@@ -491,8 +491,16 @@ type Room struct {
 	// People currently in the room, counting a person on three devices once.
 	DistinctUserCount uint32 `protobuf:"varint,11,opt,name=distinct_user_count,json=distinctUserCount,proto3" json:"distinct_user_count,omitempty"`
 	IsRecording       bool   `protobuf:"varint,12,opt,name=is_recording,json=isRecording,proto3" json:"is_recording,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// How the audience divides between the cohosts who brought it.
+	//
+	// Included here rather than behind a call of its own because it is a handful of
+	// integers however large the room is, and because the question it answers --
+	// "is this collaboration working" -- is asked at the same moment as everything
+	// else on this message. Empty for a room nobody was brought to, and for a
+	// tenant that does not attribute arrivals.
+	Audiences     []*Audience `protobuf:"bytes,13,rep,name=audiences,proto3" json:"audiences,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Room) Reset() {
@@ -609,6 +617,13 @@ func (x *Room) GetIsRecording() bool {
 	return false
 }
 
+func (x *Room) GetAudiences() []*Audience {
+	if x != nil {
+		return x.Audiences
+	}
+	return nil
+}
+
 // Everything a moderator interface needs about one device in a room.
 type Participant struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -634,7 +649,15 @@ type Participant struct {
 	JoinedAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
 	// Which relay is holding this session. Operational detail, useful when a
 	// support question is really a question about one machine.
-	RelayId       string `protobuf:"bytes,10,opt,name=relay_id,json=relayId,proto3" json:"relay_id,omitempty"`
+	RelayId string `protobuf:"bytes,10,opt,name=relay_id,json=relayId,proto3" json:"relay_id,omitempty"`
+	// The username whose following brought them, from the token they joined with.
+	// Empty when they arrived on their own.
+	//
+	// Set once, on the first session of a stay, and kept across reconnects. A
+	// viewer who drops off the network and comes back is the same arrival, and
+	// re-deriving this from the new token would let a refresh quietly move
+	// somebody between audiences.
+	ArrivedVia    string `protobuf:"bytes,11,opt,name=arrived_via,json=arrivedVia,proto3" json:"arrived_via,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -739,6 +762,87 @@ func (x *Participant) GetRelayId() string {
 	return ""
 }
 
+func (x *Participant) GetArrivedVia() string {
+	if x != nil {
+		return x.ArrivedVia
+	}
+	return ""
+}
+
+// How many viewers each cohost brought to a room.
+//
+// The aggregate of `Participant.arrived_via` over everybody currently in the
+// room. Served as counts rather than as a way to list an audience: a room may
+// hold a million viewers, and the useful question at that scale is how the
+// audience divides, not who is in it.
+type Audience struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The cohost whose following these viewers came through. Empty for the ones
+	// who found the room themselves, which is a cohort in its own right -- the
+	// organic reach every cohost's contribution is measured against.
+	Via     string `protobuf:"bytes,1,opt,name=via,proto3" json:"via,omitempty"`
+	Viewers int64  `protobuf:"varint,2,opt,name=viewers,proto3" json:"viewers,omitempty"`
+	// What `viewers` was rounded to. One is exact.
+	//
+	// Reported rather than implied, because a count of a busy room is quantised to
+	// keep it from changing several times a second, and a consumer that assumed
+	// exactness would publish a precise-looking number that is not.
+	Resolution    int64 `protobuf:"varint,3,opt,name=resolution,proto3" json:"resolution,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Audience) Reset() {
+	*x = Audience{}
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Audience) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Audience) ProtoMessage() {}
+
+func (x *Audience) ProtoReflect() protoreflect.Message {
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Audience.ProtoReflect.Descriptor instead.
+func (*Audience) Descriptor() ([]byte, []int) {
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Audience) GetVia() string {
+	if x != nil {
+		return x.Via
+	}
+	return ""
+}
+
+func (x *Audience) GetViewers() int64 {
+	if x != nil {
+		return x.Viewers
+	}
+	return 0
+}
+
+func (x *Audience) GetResolution() int64 {
+	if x != nil {
+		return x.Resolution
+	}
+	return 0
+}
+
 type Watchdog struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -770,7 +874,7 @@ type Watchdog struct {
 
 func (x *Watchdog) Reset() {
 	*x = Watchdog{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[4]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -782,7 +886,7 @@ func (x *Watchdog) String() string {
 func (*Watchdog) ProtoMessage() {}
 
 func (x *Watchdog) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[4]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -795,7 +899,7 @@ func (x *Watchdog) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Watchdog.ProtoReflect.Descriptor instead.
 func (*Watchdog) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{4}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Watchdog) GetId() string {
@@ -895,7 +999,7 @@ type CreateRoomRequest struct {
 
 func (x *CreateRoomRequest) Reset() {
 	*x = CreateRoomRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[5]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -907,7 +1011,7 @@ func (x *CreateRoomRequest) String() string {
 func (*CreateRoomRequest) ProtoMessage() {}
 
 func (x *CreateRoomRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[5]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -920,7 +1024,7 @@ func (x *CreateRoomRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoomRequest.ProtoReflect.Descriptor instead.
 func (*CreateRoomRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{5}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateRoomRequest) GetTenant() string {
@@ -975,7 +1079,7 @@ type GetRoomRequest struct {
 
 func (x *GetRoomRequest) Reset() {
 	*x = GetRoomRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[6]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -987,7 +1091,7 @@ func (x *GetRoomRequest) String() string {
 func (*GetRoomRequest) ProtoMessage() {}
 
 func (x *GetRoomRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[6]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +1104,7 @@ func (x *GetRoomRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoomRequest.ProtoReflect.Descriptor instead.
 func (*GetRoomRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{6}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetRoomRequest) GetTenant() string {
@@ -1030,7 +1134,7 @@ type ListRoomsRequest struct {
 
 func (x *ListRoomsRequest) Reset() {
 	*x = ListRoomsRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[7]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1042,7 +1146,7 @@ func (x *ListRoomsRequest) String() string {
 func (*ListRoomsRequest) ProtoMessage() {}
 
 func (x *ListRoomsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[7]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1055,7 +1159,7 @@ func (x *ListRoomsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRoomsRequest.ProtoReflect.Descriptor instead.
 func (*ListRoomsRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{7}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListRoomsRequest) GetTenant() string {
@@ -1096,7 +1200,7 @@ type ListRoomsResponse struct {
 
 func (x *ListRoomsResponse) Reset() {
 	*x = ListRoomsResponse{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[8]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1108,7 +1212,7 @@ func (x *ListRoomsResponse) String() string {
 func (*ListRoomsResponse) ProtoMessage() {}
 
 func (x *ListRoomsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[8]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1121,7 +1225,7 @@ func (x *ListRoomsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRoomsResponse.ProtoReflect.Descriptor instead.
 func (*ListRoomsResponse) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{8}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListRoomsResponse) GetRooms() []*Room {
@@ -1153,7 +1257,7 @@ type UpdateRoomPolicyRequest struct {
 
 func (x *UpdateRoomPolicyRequest) Reset() {
 	*x = UpdateRoomPolicyRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[9]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1165,7 +1269,7 @@ func (x *UpdateRoomPolicyRequest) String() string {
 func (*UpdateRoomPolicyRequest) ProtoMessage() {}
 
 func (x *UpdateRoomPolicyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[9]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1178,7 +1282,7 @@ func (x *UpdateRoomPolicyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRoomPolicyRequest.ProtoReflect.Descriptor instead.
 func (*UpdateRoomPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{9}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *UpdateRoomPolicyRequest) GetTenant() string {
@@ -1229,7 +1333,7 @@ type CloseRoomRequest struct {
 
 func (x *CloseRoomRequest) Reset() {
 	*x = CloseRoomRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[10]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1241,7 +1345,7 @@ func (x *CloseRoomRequest) String() string {
 func (*CloseRoomRequest) ProtoMessage() {}
 
 func (x *CloseRoomRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[10]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1254,7 +1358,7 @@ func (x *CloseRoomRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CloseRoomRequest.ProtoReflect.Descriptor instead.
 func (*CloseRoomRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{10}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CloseRoomRequest) GetTenant() string {
@@ -1303,7 +1407,7 @@ type ListParticipantsRequest struct {
 
 func (x *ListParticipantsRequest) Reset() {
 	*x = ListParticipantsRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[11]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1315,7 +1419,7 @@ func (x *ListParticipantsRequest) String() string {
 func (*ListParticipantsRequest) ProtoMessage() {}
 
 func (x *ListParticipantsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[11]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1328,7 +1432,7 @@ func (x *ListParticipantsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListParticipantsRequest.ProtoReflect.Descriptor instead.
 func (*ListParticipantsRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{11}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ListParticipantsRequest) GetTenant() string {
@@ -1383,7 +1487,7 @@ type ListParticipantsResponse struct {
 
 func (x *ListParticipantsResponse) Reset() {
 	*x = ListParticipantsResponse{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[12]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1395,7 +1499,7 @@ func (x *ListParticipantsResponse) String() string {
 func (*ListParticipantsResponse) ProtoMessage() {}
 
 func (x *ListParticipantsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[12]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1408,7 +1512,7 @@ func (x *ListParticipantsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListParticipantsResponse.ProtoReflect.Descriptor instead.
 func (*ListParticipantsResponse) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{12}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListParticipantsResponse) GetParticipants() []*Participant {
@@ -1438,7 +1542,7 @@ type GetParticipantRequest struct {
 
 func (x *GetParticipantRequest) Reset() {
 	*x = GetParticipantRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[13]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1450,7 +1554,7 @@ func (x *GetParticipantRequest) String() string {
 func (*GetParticipantRequest) ProtoMessage() {}
 
 func (x *GetParticipantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[13]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1463,7 +1567,7 @@ func (x *GetParticipantRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetParticipantRequest.ProtoReflect.Descriptor instead.
 func (*GetParticipantRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{13}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetParticipantRequest) GetTenant() string {
@@ -1507,7 +1611,7 @@ type AttachWatchdogRequest struct {
 
 func (x *AttachWatchdogRequest) Reset() {
 	*x = AttachWatchdogRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[14]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1519,7 +1623,7 @@ func (x *AttachWatchdogRequest) String() string {
 func (*AttachWatchdogRequest) ProtoMessage() {}
 
 func (x *AttachWatchdogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[14]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1532,7 +1636,7 @@ func (x *AttachWatchdogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttachWatchdogRequest.ProtoReflect.Descriptor instead.
 func (*AttachWatchdogRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{14}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *AttachWatchdogRequest) GetTenant() string {
@@ -1624,7 +1728,7 @@ type DetachWatchdogRequest struct {
 
 func (x *DetachWatchdogRequest) Reset() {
 	*x = DetachWatchdogRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[15]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1636,7 +1740,7 @@ func (x *DetachWatchdogRequest) String() string {
 func (*DetachWatchdogRequest) ProtoMessage() {}
 
 func (x *DetachWatchdogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[15]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1649,7 +1753,7 @@ func (x *DetachWatchdogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DetachWatchdogRequest.ProtoReflect.Descriptor instead.
 func (*DetachWatchdogRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{15}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DetachWatchdogRequest) GetTenant() string {
@@ -1690,7 +1794,7 @@ type ListWatchdogsRequest struct {
 
 func (x *ListWatchdogsRequest) Reset() {
 	*x = ListWatchdogsRequest{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[16]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1702,7 +1806,7 @@ func (x *ListWatchdogsRequest) String() string {
 func (*ListWatchdogsRequest) ProtoMessage() {}
 
 func (x *ListWatchdogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[16]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1715,7 +1819,7 @@ func (x *ListWatchdogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWatchdogsRequest.ProtoReflect.Descriptor instead.
 func (*ListWatchdogsRequest) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{16}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListWatchdogsRequest) GetTenant() string {
@@ -1741,7 +1845,7 @@ type ListWatchdogsResponse struct {
 
 func (x *ListWatchdogsResponse) Reset() {
 	*x = ListWatchdogsResponse{}
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[17]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1753,7 +1857,7 @@ func (x *ListWatchdogsResponse) String() string {
 func (*ListWatchdogsResponse) ProtoMessage() {}
 
 func (x *ListWatchdogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[17]
+	mi := &file_moqom_admin_v1_rooms_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1766,7 +1870,7 @@ func (x *ListWatchdogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWatchdogsResponse.ProtoReflect.Descriptor instead.
 func (*ListWatchdogsResponse) Descriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{17}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ListWatchdogsResponse) GetWatchdogs() []*Watchdog {
@@ -1793,7 +1897,7 @@ const file_moqom_admin_v1_rooms_proto_rawDesc = "" +
 	"\x10max_participants\x18\x04 \x01(\rR\x0fmaxParticipants\x12\x1f\n" +
 	"\vstage_slots\x18\x05 \x01(\rR\n" +
 	"stageSlots\x12%\n" +
-	"\x0ewatchdog_limit\x18\x06 \x01(\rR\rwatchdogLimit\"\xa7\x04\n" +
+	"\x0ewatchdog_limit\x18\x06 \x01(\rR\rwatchdogLimit\"\xdf\x04\n" +
 	"\x04Room\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x12\n" +
 	"\x04room\x18\x02 \x01(\tR\x04room\x12\x1c\n" +
@@ -1809,7 +1913,8 @@ const file_moqom_admin_v1_rooms_proto_rawDesc = "" +
 	"\x11participant_count\x18\n" +
 	" \x01(\rR\x10participantCount\x12.\n" +
 	"\x13distinct_user_count\x18\v \x01(\rR\x11distinctUserCount\x12!\n" +
-	"\fis_recording\x18\f \x01(\bR\visRecording\"\xad\x04\n" +
+	"\fis_recording\x18\f \x01(\bR\visRecording\x126\n" +
+	"\taudiences\x18\r \x03(\v2\x18.moqom.admin.v1.AudienceR\taudiences\"\xce\x04\n" +
 	"\vParticipant\x124\n" +
 	"\bidentity\x18\x01 \x01(\v2\x18.moqom.admin.v1.IdentityR\bidentity\x12.\n" +
 	"\x06grants\x18\x02 \x01(\v2\x16.moqom.admin.v1.GrantsR\x06grants\x124\n" +
@@ -1822,7 +1927,15 @@ const file_moqom_admin_v1_rooms_proto_rawDesc = "" +
 	"\fis_backstage\x18\b \x01(\bR\visBackstage\x127\n" +
 	"\tjoined_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\bjoinedAt\x12\x19\n" +
 	"\brelay_id\x18\n" +
-	" \x01(\tR\arelayId\"\xc4\x03\n" +
+	" \x01(\tR\arelayId\x12\x1f\n" +
+	"\varrived_via\x18\v \x01(\tR\n" +
+	"arrivedVia\"V\n" +
+	"\bAudience\x12\x10\n" +
+	"\x03via\x18\x01 \x01(\tR\x03via\x12\x18\n" +
+	"\aviewers\x18\x02 \x01(\x03R\aviewers\x12\x1e\n" +
+	"\n" +
+	"resolution\x18\x03 \x01(\x03R\n" +
+	"resolution\"\xc4\x03\n" +
 	"\bWatchdog\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x120\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x1c.moqom.admin.v1.WatchdogKindR\x04kind\x12\x1f\n" +
@@ -1971,7 +2084,7 @@ func file_moqom_admin_v1_rooms_proto_rawDescGZIP() []byte {
 }
 
 var file_moqom_admin_v1_rooms_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_moqom_admin_v1_rooms_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_moqom_admin_v1_rooms_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_moqom_admin_v1_rooms_proto_goTypes = []any{
 	(RoomLifecycle)(0),               // 0: moqom.admin.v1.RoomLifecycle
 	(RecordingPolicy)(0),             // 1: moqom.admin.v1.RecordingPolicy
@@ -1982,89 +2095,91 @@ var file_moqom_admin_v1_rooms_proto_goTypes = []any{
 	(*RoomPolicy)(nil),               // 6: moqom.admin.v1.RoomPolicy
 	(*Room)(nil),                     // 7: moqom.admin.v1.Room
 	(*Participant)(nil),              // 8: moqom.admin.v1.Participant
-	(*Watchdog)(nil),                 // 9: moqom.admin.v1.Watchdog
-	(*CreateRoomRequest)(nil),        // 10: moqom.admin.v1.CreateRoomRequest
-	(*GetRoomRequest)(nil),           // 11: moqom.admin.v1.GetRoomRequest
-	(*ListRoomsRequest)(nil),         // 12: moqom.admin.v1.ListRoomsRequest
-	(*ListRoomsResponse)(nil),        // 13: moqom.admin.v1.ListRoomsResponse
-	(*UpdateRoomPolicyRequest)(nil),  // 14: moqom.admin.v1.UpdateRoomPolicyRequest
-	(*CloseRoomRequest)(nil),         // 15: moqom.admin.v1.CloseRoomRequest
-	(*ListParticipantsRequest)(nil),  // 16: moqom.admin.v1.ListParticipantsRequest
-	(*ListParticipantsResponse)(nil), // 17: moqom.admin.v1.ListParticipantsResponse
-	(*GetParticipantRequest)(nil),    // 18: moqom.admin.v1.GetParticipantRequest
-	(*AttachWatchdogRequest)(nil),    // 19: moqom.admin.v1.AttachWatchdogRequest
-	(*DetachWatchdogRequest)(nil),    // 20: moqom.admin.v1.DetachWatchdogRequest
-	(*ListWatchdogsRequest)(nil),     // 21: moqom.admin.v1.ListWatchdogsRequest
-	(*ListWatchdogsResponse)(nil),    // 22: moqom.admin.v1.ListWatchdogsResponse
-	(*timestamppb.Timestamp)(nil),    // 23: google.protobuf.Timestamp
-	(*Identity)(nil),                 // 24: moqom.admin.v1.Identity
-	(*Grants)(nil),                   // 25: moqom.admin.v1.Grants
-	(Presence)(0),                    // 26: moqom.admin.v1.Presence
-	(MediaKind)(0),                   // 27: moqom.admin.v1.MediaKind
-	(*ActorContext)(nil),             // 28: moqom.admin.v1.ActorContext
-	(ModerationCode)(0),              // 29: moqom.admin.v1.ModerationCode
+	(*Audience)(nil),                 // 9: moqom.admin.v1.Audience
+	(*Watchdog)(nil),                 // 10: moqom.admin.v1.Watchdog
+	(*CreateRoomRequest)(nil),        // 11: moqom.admin.v1.CreateRoomRequest
+	(*GetRoomRequest)(nil),           // 12: moqom.admin.v1.GetRoomRequest
+	(*ListRoomsRequest)(nil),         // 13: moqom.admin.v1.ListRoomsRequest
+	(*ListRoomsResponse)(nil),        // 14: moqom.admin.v1.ListRoomsResponse
+	(*UpdateRoomPolicyRequest)(nil),  // 15: moqom.admin.v1.UpdateRoomPolicyRequest
+	(*CloseRoomRequest)(nil),         // 16: moqom.admin.v1.CloseRoomRequest
+	(*ListParticipantsRequest)(nil),  // 17: moqom.admin.v1.ListParticipantsRequest
+	(*ListParticipantsResponse)(nil), // 18: moqom.admin.v1.ListParticipantsResponse
+	(*GetParticipantRequest)(nil),    // 19: moqom.admin.v1.GetParticipantRequest
+	(*AttachWatchdogRequest)(nil),    // 20: moqom.admin.v1.AttachWatchdogRequest
+	(*DetachWatchdogRequest)(nil),    // 21: moqom.admin.v1.DetachWatchdogRequest
+	(*ListWatchdogsRequest)(nil),     // 22: moqom.admin.v1.ListWatchdogsRequest
+	(*ListWatchdogsResponse)(nil),    // 23: moqom.admin.v1.ListWatchdogsResponse
+	(*timestamppb.Timestamp)(nil),    // 24: google.protobuf.Timestamp
+	(*Identity)(nil),                 // 25: moqom.admin.v1.Identity
+	(*Grants)(nil),                   // 26: moqom.admin.v1.Grants
+	(Presence)(0),                    // 27: moqom.admin.v1.Presence
+	(MediaKind)(0),                   // 28: moqom.admin.v1.MediaKind
+	(*ActorContext)(nil),             // 29: moqom.admin.v1.ActorContext
+	(ModerationCode)(0),              // 30: moqom.admin.v1.ModerationCode
 }
 var file_moqom_admin_v1_rooms_proto_depIdxs = []int32{
 	5,  // 0: moqom.admin.v1.RoomPolicy.age_gate:type_name -> moqom.admin.v1.AgeGate
 	1,  // 1: moqom.admin.v1.RoomPolicy.recording:type_name -> moqom.admin.v1.RecordingPolicy
 	6,  // 2: moqom.admin.v1.Room.policy:type_name -> moqom.admin.v1.RoomPolicy
 	0,  // 3: moqom.admin.v1.Room.lifecycle:type_name -> moqom.admin.v1.RoomLifecycle
-	23, // 4: moqom.admin.v1.Room.starts_at:type_name -> google.protobuf.Timestamp
-	23, // 5: moqom.admin.v1.Room.created_at:type_name -> google.protobuf.Timestamp
-	23, // 6: moqom.admin.v1.Room.ended_at:type_name -> google.protobuf.Timestamp
-	24, // 7: moqom.admin.v1.Room.acting_host:type_name -> moqom.admin.v1.Identity
-	24, // 8: moqom.admin.v1.Participant.identity:type_name -> moqom.admin.v1.Identity
-	25, // 9: moqom.admin.v1.Participant.grants:type_name -> moqom.admin.v1.Grants
-	26, // 10: moqom.admin.v1.Participant.presence:type_name -> moqom.admin.v1.Presence
-	27, // 11: moqom.admin.v1.Participant.self_muted:type_name -> moqom.admin.v1.MediaKind
-	27, // 12: moqom.admin.v1.Participant.forced_muted_for_everyone:type_name -> moqom.admin.v1.MediaKind
-	27, // 13: moqom.admin.v1.Participant.forced_muted_for_audience:type_name -> moqom.admin.v1.MediaKind
-	23, // 14: moqom.admin.v1.Participant.joined_at:type_name -> google.protobuf.Timestamp
-	2,  // 15: moqom.admin.v1.Watchdog.kind:type_name -> moqom.admin.v1.WatchdogKind
-	3,  // 16: moqom.admin.v1.Watchdog.operated_by:type_name -> moqom.admin.v1.WatchdogOperator
-	4,  // 17: moqom.admin.v1.Watchdog.health:type_name -> moqom.admin.v1.WatchdogHealth
-	23, // 18: moqom.admin.v1.Watchdog.attached_at:type_name -> google.protobuf.Timestamp
-	6,  // 19: moqom.admin.v1.CreateRoomRequest.policy:type_name -> moqom.admin.v1.RoomPolicy
-	23, // 20: moqom.admin.v1.CreateRoomRequest.starts_at:type_name -> google.protobuf.Timestamp
-	28, // 21: moqom.admin.v1.CreateRoomRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	0,  // 22: moqom.admin.v1.ListRoomsRequest.lifecycle:type_name -> moqom.admin.v1.RoomLifecycle
-	7,  // 23: moqom.admin.v1.ListRoomsResponse.rooms:type_name -> moqom.admin.v1.Room
-	6,  // 24: moqom.admin.v1.UpdateRoomPolicyRequest.policy:type_name -> moqom.admin.v1.RoomPolicy
-	28, // 25: moqom.admin.v1.UpdateRoomPolicyRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	29, // 26: moqom.admin.v1.CloseRoomRequest.code:type_name -> moqom.admin.v1.ModerationCode
-	28, // 27: moqom.admin.v1.CloseRoomRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	8,  // 28: moqom.admin.v1.ListParticipantsResponse.participants:type_name -> moqom.admin.v1.Participant
-	24, // 29: moqom.admin.v1.GetParticipantRequest.identity:type_name -> moqom.admin.v1.Identity
-	2,  // 30: moqom.admin.v1.AttachWatchdogRequest.kind:type_name -> moqom.admin.v1.WatchdogKind
-	3,  // 31: moqom.admin.v1.AttachWatchdogRequest.operated_by:type_name -> moqom.admin.v1.WatchdogOperator
-	28, // 32: moqom.admin.v1.AttachWatchdogRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	28, // 33: moqom.admin.v1.DetachWatchdogRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	9,  // 34: moqom.admin.v1.ListWatchdogsResponse.watchdogs:type_name -> moqom.admin.v1.Watchdog
-	10, // 35: moqom.admin.v1.Rooms.CreateRoom:input_type -> moqom.admin.v1.CreateRoomRequest
-	11, // 36: moqom.admin.v1.Rooms.GetRoom:input_type -> moqom.admin.v1.GetRoomRequest
-	12, // 37: moqom.admin.v1.Rooms.ListRooms:input_type -> moqom.admin.v1.ListRoomsRequest
-	14, // 38: moqom.admin.v1.Rooms.UpdateRoomPolicy:input_type -> moqom.admin.v1.UpdateRoomPolicyRequest
-	15, // 39: moqom.admin.v1.Rooms.CloseRoom:input_type -> moqom.admin.v1.CloseRoomRequest
-	16, // 40: moqom.admin.v1.Rooms.ListParticipants:input_type -> moqom.admin.v1.ListParticipantsRequest
-	18, // 41: moqom.admin.v1.Rooms.GetParticipant:input_type -> moqom.admin.v1.GetParticipantRequest
-	19, // 42: moqom.admin.v1.Rooms.AttachWatchdog:input_type -> moqom.admin.v1.AttachWatchdogRequest
-	20, // 43: moqom.admin.v1.Rooms.DetachWatchdog:input_type -> moqom.admin.v1.DetachWatchdogRequest
-	21, // 44: moqom.admin.v1.Rooms.ListWatchdogs:input_type -> moqom.admin.v1.ListWatchdogsRequest
-	7,  // 45: moqom.admin.v1.Rooms.CreateRoom:output_type -> moqom.admin.v1.Room
-	7,  // 46: moqom.admin.v1.Rooms.GetRoom:output_type -> moqom.admin.v1.Room
-	13, // 47: moqom.admin.v1.Rooms.ListRooms:output_type -> moqom.admin.v1.ListRoomsResponse
-	7,  // 48: moqom.admin.v1.Rooms.UpdateRoomPolicy:output_type -> moqom.admin.v1.Room
-	7,  // 49: moqom.admin.v1.Rooms.CloseRoom:output_type -> moqom.admin.v1.Room
-	17, // 50: moqom.admin.v1.Rooms.ListParticipants:output_type -> moqom.admin.v1.ListParticipantsResponse
-	8,  // 51: moqom.admin.v1.Rooms.GetParticipant:output_type -> moqom.admin.v1.Participant
-	9,  // 52: moqom.admin.v1.Rooms.AttachWatchdog:output_type -> moqom.admin.v1.Watchdog
-	9,  // 53: moqom.admin.v1.Rooms.DetachWatchdog:output_type -> moqom.admin.v1.Watchdog
-	22, // 54: moqom.admin.v1.Rooms.ListWatchdogs:output_type -> moqom.admin.v1.ListWatchdogsResponse
-	45, // [45:55] is the sub-list for method output_type
-	35, // [35:45] is the sub-list for method input_type
-	35, // [35:35] is the sub-list for extension type_name
-	35, // [35:35] is the sub-list for extension extendee
-	0,  // [0:35] is the sub-list for field type_name
+	24, // 4: moqom.admin.v1.Room.starts_at:type_name -> google.protobuf.Timestamp
+	24, // 5: moqom.admin.v1.Room.created_at:type_name -> google.protobuf.Timestamp
+	24, // 6: moqom.admin.v1.Room.ended_at:type_name -> google.protobuf.Timestamp
+	25, // 7: moqom.admin.v1.Room.acting_host:type_name -> moqom.admin.v1.Identity
+	9,  // 8: moqom.admin.v1.Room.audiences:type_name -> moqom.admin.v1.Audience
+	25, // 9: moqom.admin.v1.Participant.identity:type_name -> moqom.admin.v1.Identity
+	26, // 10: moqom.admin.v1.Participant.grants:type_name -> moqom.admin.v1.Grants
+	27, // 11: moqom.admin.v1.Participant.presence:type_name -> moqom.admin.v1.Presence
+	28, // 12: moqom.admin.v1.Participant.self_muted:type_name -> moqom.admin.v1.MediaKind
+	28, // 13: moqom.admin.v1.Participant.forced_muted_for_everyone:type_name -> moqom.admin.v1.MediaKind
+	28, // 14: moqom.admin.v1.Participant.forced_muted_for_audience:type_name -> moqom.admin.v1.MediaKind
+	24, // 15: moqom.admin.v1.Participant.joined_at:type_name -> google.protobuf.Timestamp
+	2,  // 16: moqom.admin.v1.Watchdog.kind:type_name -> moqom.admin.v1.WatchdogKind
+	3,  // 17: moqom.admin.v1.Watchdog.operated_by:type_name -> moqom.admin.v1.WatchdogOperator
+	4,  // 18: moqom.admin.v1.Watchdog.health:type_name -> moqom.admin.v1.WatchdogHealth
+	24, // 19: moqom.admin.v1.Watchdog.attached_at:type_name -> google.protobuf.Timestamp
+	6,  // 20: moqom.admin.v1.CreateRoomRequest.policy:type_name -> moqom.admin.v1.RoomPolicy
+	24, // 21: moqom.admin.v1.CreateRoomRequest.starts_at:type_name -> google.protobuf.Timestamp
+	29, // 22: moqom.admin.v1.CreateRoomRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	0,  // 23: moqom.admin.v1.ListRoomsRequest.lifecycle:type_name -> moqom.admin.v1.RoomLifecycle
+	7,  // 24: moqom.admin.v1.ListRoomsResponse.rooms:type_name -> moqom.admin.v1.Room
+	6,  // 25: moqom.admin.v1.UpdateRoomPolicyRequest.policy:type_name -> moqom.admin.v1.RoomPolicy
+	29, // 26: moqom.admin.v1.UpdateRoomPolicyRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	30, // 27: moqom.admin.v1.CloseRoomRequest.code:type_name -> moqom.admin.v1.ModerationCode
+	29, // 28: moqom.admin.v1.CloseRoomRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	8,  // 29: moqom.admin.v1.ListParticipantsResponse.participants:type_name -> moqom.admin.v1.Participant
+	25, // 30: moqom.admin.v1.GetParticipantRequest.identity:type_name -> moqom.admin.v1.Identity
+	2,  // 31: moqom.admin.v1.AttachWatchdogRequest.kind:type_name -> moqom.admin.v1.WatchdogKind
+	3,  // 32: moqom.admin.v1.AttachWatchdogRequest.operated_by:type_name -> moqom.admin.v1.WatchdogOperator
+	29, // 33: moqom.admin.v1.AttachWatchdogRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	29, // 34: moqom.admin.v1.DetachWatchdogRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	10, // 35: moqom.admin.v1.ListWatchdogsResponse.watchdogs:type_name -> moqom.admin.v1.Watchdog
+	11, // 36: moqom.admin.v1.Rooms.CreateRoom:input_type -> moqom.admin.v1.CreateRoomRequest
+	12, // 37: moqom.admin.v1.Rooms.GetRoom:input_type -> moqom.admin.v1.GetRoomRequest
+	13, // 38: moqom.admin.v1.Rooms.ListRooms:input_type -> moqom.admin.v1.ListRoomsRequest
+	15, // 39: moqom.admin.v1.Rooms.UpdateRoomPolicy:input_type -> moqom.admin.v1.UpdateRoomPolicyRequest
+	16, // 40: moqom.admin.v1.Rooms.CloseRoom:input_type -> moqom.admin.v1.CloseRoomRequest
+	17, // 41: moqom.admin.v1.Rooms.ListParticipants:input_type -> moqom.admin.v1.ListParticipantsRequest
+	19, // 42: moqom.admin.v1.Rooms.GetParticipant:input_type -> moqom.admin.v1.GetParticipantRequest
+	20, // 43: moqom.admin.v1.Rooms.AttachWatchdog:input_type -> moqom.admin.v1.AttachWatchdogRequest
+	21, // 44: moqom.admin.v1.Rooms.DetachWatchdog:input_type -> moqom.admin.v1.DetachWatchdogRequest
+	22, // 45: moqom.admin.v1.Rooms.ListWatchdogs:input_type -> moqom.admin.v1.ListWatchdogsRequest
+	7,  // 46: moqom.admin.v1.Rooms.CreateRoom:output_type -> moqom.admin.v1.Room
+	7,  // 47: moqom.admin.v1.Rooms.GetRoom:output_type -> moqom.admin.v1.Room
+	14, // 48: moqom.admin.v1.Rooms.ListRooms:output_type -> moqom.admin.v1.ListRoomsResponse
+	7,  // 49: moqom.admin.v1.Rooms.UpdateRoomPolicy:output_type -> moqom.admin.v1.Room
+	7,  // 50: moqom.admin.v1.Rooms.CloseRoom:output_type -> moqom.admin.v1.Room
+	18, // 51: moqom.admin.v1.Rooms.ListParticipants:output_type -> moqom.admin.v1.ListParticipantsResponse
+	8,  // 52: moqom.admin.v1.Rooms.GetParticipant:output_type -> moqom.admin.v1.Participant
+	10, // 53: moqom.admin.v1.Rooms.AttachWatchdog:output_type -> moqom.admin.v1.Watchdog
+	10, // 54: moqom.admin.v1.Rooms.DetachWatchdog:output_type -> moqom.admin.v1.Watchdog
+	23, // 55: moqom.admin.v1.Rooms.ListWatchdogs:output_type -> moqom.admin.v1.ListWatchdogsResponse
+	46, // [46:56] is the sub-list for method output_type
+	36, // [36:46] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_moqom_admin_v1_rooms_proto_init() }
@@ -2079,7 +2194,7 @@ func file_moqom_admin_v1_rooms_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moqom_admin_v1_rooms_proto_rawDesc), len(file_moqom_admin_v1_rooms_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

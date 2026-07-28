@@ -127,7 +127,27 @@ type MintClientTokenRequest struct {
 	Backstage bool `protobuf:"varint,8,opt,name=backstage,proto3" json:"backstage,omitempty"`
 	// Attest that this user's age has been verified, for rooms whose policy
 	// demands it. The tenant performs the verification; this asserts it happened.
-	AgeVerified   bool `protobuf:"varint,9,opt,name=age_verified,json=ageVerified,proto3" json:"age_verified,omitempty"`
+	AgeVerified bool `protobuf:"varint,9,opt,name=age_verified,json=ageVerified,proto3" json:"age_verified,omitempty"`
+	// The username whose following brought this user to the room, when the tenant
+	// knows. Empty when they found it themselves, which is the common case and a
+	// number worth having rather than a gap to apologise for.
+	//
+	// Only the tenant can supply this. MOQOM sees a viewer arrive with a token; it
+	// has no way to know they tapped a notification about a particular cohost, or
+	// followed a link that cohost posted. So it is asserted at mint time, signed
+	// into the token, and thereafter unforgeable by the client -- which matters,
+	// because when two cohosts bring their own followings to one room these counts
+	// are what a revenue split is argued over.
+	//
+	// Capture it from the start even if nothing reads it yet. Provenance is a fact
+	// about the moment somebody arrived, and unlike almost everything else here it
+	// cannot be recomputed later from what was stored: a viewer who joined through
+	// a cohost's link is indistinguishable, an hour afterwards, from one who did
+	// not.
+	//
+	// Rejected if it names the user themselves, or if no `room` is given, since
+	// neither can mean anything.
+	ArrivedVia    string `protobuf:"bytes,10,opt,name=arrived_via,json=arrivedVia,proto3" json:"arrived_via,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -223,6 +243,13 @@ func (x *MintClientTokenRequest) GetAgeVerified() bool {
 		return x.AgeVerified
 	}
 	return false
+}
+
+func (x *MintClientTokenRequest) GetArrivedVia() string {
+	if x != nil {
+		return x.ArrivedVia
+	}
+	return ""
 }
 
 type MintClientTokenResponse struct {
@@ -482,7 +509,7 @@ var File_moqom_admin_v1_tokens_proto protoreflect.FileDescriptor
 
 const file_moqom_admin_v1_tokens_proto_rawDesc = "" +
 	"\n" +
-	"\x1bmoqom/admin/v1/tokens.proto\x12\x0emoqom.admin.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bmoqom/admin/v1/common.proto\"\xef\x02\n" +
+	"\x1bmoqom/admin/v1/tokens.proto\x12\x0emoqom.admin.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bmoqom/admin/v1/common.proto\"\x90\x03\n" +
 	"\x16MintClientTokenRequest\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12+\n" +
@@ -492,7 +519,10 @@ const file_moqom_admin_v1_tokens_proto_rawDesc = "" +
 	"\x06preset\x18\x06 \x01(\x0e2 .moqom.admin.v1.CapabilityPresetR\x06preset\x125\n" +
 	"\blifetime\x18\a \x01(\v2\x19.google.protobuf.DurationR\blifetime\x12\x1c\n" +
 	"\tbackstage\x18\b \x01(\bR\tbackstage\x12!\n" +
-	"\fage_verified\x18\t \x01(\bR\vageVerified\"\xb7\x01\n" +
+	"\fage_verified\x18\t \x01(\bR\vageVerified\x12\x1f\n" +
+	"\varrived_via\x18\n" +
+	" \x01(\tR\n" +
+	"arrivedVia\"\xb7\x01\n" +
 	"\x17MintClientTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
 	"\n" +
