@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # This is the weaker half of the SDK's testing, on purpose. What runs here is
+  # the SDK against a stub; the platform repository drives it against a real
+  # control plane over bufconn, and against the Rust SDK for the same calls, both
+  # of which prove considerably more than anything possible from inside this
+  # repository alone.
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./...
+
+      # An SDK whose only direct dependencies are the gRPC and protobuf runtimes
+      # is a claim worth keeping true: it is what makes adding this to somebody's
+      # backend a small decision rather than a negotiation. Asserted rather than
+      # printed, because a listing nobody reads is not a check.
+      - name: Dependencies stay small
+        run: |
+          go mod tidy
+          if ! git diff --quiet -- go.mod go.sum; then
+            echo "::error::go.mod is not tidy."
+            git diff -- go.mod go.sum
+            exit 1
+          fi
+          unexpected="$(go list -f '{{range .Imports}}{{.}}
+          {{end}}' ./... \
+            | grep '\.' | cut -d/ -f1-3 | sort -u \
+            | grep -vE '^(github\.com/moqom-cloud/moqom-go|google\.golang\.org/(grpc|protobuf))' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "::error::The SDK grew a dependency beyond grpc and protobuf:"
+            echo "$unexpected"
+            exit 1
+          fi
+
+  # The bindings are committed so that `go get` does not require protoc. That is
+  # only safe if they still match the contract they came from, and nothing about
+  # a stale checked-in file fails to compile.
+  proto:
+    name: Generated bindings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: moqom-go
+
+      - uses: actions/checkout@v7
+        with:
+          repository: moqom-cloud/moqom
+          path: moqom
+          token: ${{ secrets.PLATFORM_REPO_TOKEN }}
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: moqom-go/go.mod
+
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Regenerate
+        working-directory: moqom
+        env:
+          MOQOM_GO_SDK: ${{ github.workspace }}/moqom-go
+        run: ./tools/generate-proto.sh
+
+      - name: Fail if it changed
+        working-directory: moqom-go
+        run: |
+          if ! git diff --quiet -- admin/adminpb; then
+            echo "::error::The committed bindings no longer match proto/."
+            echo "Regenerate with moqom/tools/generate-proto.sh and commit the result."
+            git diff -- admin/adminpb
+            exit 1
+          fi

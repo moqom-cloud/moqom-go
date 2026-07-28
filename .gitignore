@@ -1,0 +1,9 @@
+bin/
+*.test
+*.out
+
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
