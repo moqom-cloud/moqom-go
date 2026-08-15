@@ -515,6 +515,7 @@ func participantFromProto(wire *adminpb.Participant) Participant {
 		IsBackstage:            wire.GetIsBackstage(),
 		JoinedAt:               timeFromProto(wire.GetJoinedAt()),
 		RelayID:                wire.GetRelayId(),
+		Locale:                 wire.GetLocale(),
 	}
 }
 

@@ -657,7 +657,14 @@ type Participant struct {
 	// viewer who drops off the network and comes back is the same arrival, and
 	// re-deriving this from the new token would let a refresh quietly move
 	// somebody between audiences.
-	ArrivedVia    string `protobuf:"bytes,11,opt,name=arrived_via,json=arrivedVia,proto3" json:"arrived_via,omitempty"`
+	ArrivedVia string `protobuf:"bytes,11,opt,name=arrived_via,json=arrivedVia,proto3" json:"arrived_via,omitempty"`
+	// BCP 47 language tag this participant last published on their catalog.
+	// Empty until a catalog arrives, and updated when they change it mid-call.
+	//
+	// Taken from the catalog rather than the join token because a token cannot
+	// change midstream and a phone's locale can. The catalog is never encrypted,
+	// so the relay can read this without being a party to the media.
+	Locale        string `protobuf:"bytes,12,opt,name=locale,proto3" json:"locale,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -765,6 +772,13 @@ func (x *Participant) GetRelayId() string {
 func (x *Participant) GetArrivedVia() string {
 	if x != nil {
 		return x.ArrivedVia
+	}
+	return ""
+}
+
+func (x *Participant) GetLocale() string {
+	if x != nil {
+		return x.Locale
 	}
 	return ""
 }
@@ -1914,7 +1928,7 @@ const file_moqom_admin_v1_rooms_proto_rawDesc = "" +
 	" \x01(\rR\x10participantCount\x12.\n" +
 	"\x13distinct_user_count\x18\v \x01(\rR\x11distinctUserCount\x12!\n" +
 	"\fis_recording\x18\f \x01(\bR\visRecording\x126\n" +
-	"\taudiences\x18\r \x03(\v2\x18.moqom.admin.v1.AudienceR\taudiences\"\xce\x04\n" +
+	"\taudiences\x18\r \x03(\v2\x18.moqom.admin.v1.AudienceR\taudiences\"\xe6\x04\n" +
 	"\vParticipant\x124\n" +
 	"\bidentity\x18\x01 \x01(\v2\x18.moqom.admin.v1.IdentityR\bidentity\x12.\n" +
 	"\x06grants\x18\x02 \x01(\v2\x16.moqom.admin.v1.GrantsR\x06grants\x124\n" +
@@ -1929,7 +1943,8 @@ const file_moqom_admin_v1_rooms_proto_rawDesc = "" +
 	"\brelay_id\x18\n" +
 	" \x01(\tR\arelayId\x12\x1f\n" +
 	"\varrived_via\x18\v \x01(\tR\n" +
-	"arrivedVia\"V\n" +
+	"arrivedVia\x12\x16\n" +
+	"\x06locale\x18\f \x01(\tR\x06locale\"V\n" +
 	"\bAudience\x12\x10\n" +
 	"\x03via\x18\x01 \x01(\tR\x03via\x12\x18\n" +
 	"\aviewers\x18\x02 \x01(\x03R\aviewers\x12\x1e\n" +

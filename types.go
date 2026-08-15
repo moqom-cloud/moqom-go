@@ -253,6 +253,10 @@ type Participant struct {
 	// RelayID is which relay holds this session. Operational detail, useful when a
 	// support question turns out to be a question about one machine.
 	RelayID string
+
+	// Locale is the BCP 47 tag this participant last published on their catalog.
+	// Empty until a catalog arrives, and updated when they change it mid-call.
+	Locale string
 }
 
 // WatchdogKind is what an observer is for.
