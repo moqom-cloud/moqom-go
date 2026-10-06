@@ -962,8 +962,13 @@ type ModerationEntry struct {
 	// Set when this entry came from a classifier rather than a person, naming the
 	// model and version that decided.
 	DecidedByModel string `protobuf:"bytes,18,opt,name=decided_by_model,json=decidedByModel,proto3" json:"decided_by_model,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// For `UPDATE_ROOM_POLICY`, the security-relevant fields that changed, as
+	// `field: from -> to`. Empty when nothing of that kind moved. Recorded as
+	// text rather than as a copy of the policy because the reader is a person
+	// working out when a room stopped being end-to-end encrypted, and who said so.
+	PolicyChange  string `protobuf:"bytes,19,opt,name=policy_change,json=policyChange,proto3" json:"policy_change,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ModerationEntry) Reset() {
@@ -1118,6 +1123,13 @@ func (x *ModerationEntry) GetEnforced() bool {
 func (x *ModerationEntry) GetDecidedByModel() string {
 	if x != nil {
 		return x.DecidedByModel
+	}
+	return ""
+}
+
+func (x *ModerationEntry) GetPolicyChange() string {
+	if x != nil {
+		return x.PolicyChange
 	}
 	return ""
 }
@@ -1334,7 +1346,7 @@ const file_moqom_admin_v1_moderation_proto_rawDesc = "" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x12\n" +
 	"\x04room\x18\x02 \x01(\tR\x04room\x126\n" +
 	"\x06target\x18\x03 \x01(\v2\x1e.moqom.admin.v1.ParticipantRefR\x06target\x122\n" +
-	"\x05actor\x18\x04 \x01(\v2\x1c.moqom.admin.v1.ActorContextR\x05actor\"\x8c\x06\n" +
+	"\x05actor\x18\x04 \x01(\v2\x1c.moqom.admin.v1.ActorContextR\x05actor\"\xb1\x06\n" +
 	"\x0fModerationEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06tenant\x18\x02 \x01(\tR\x06tenant\x12\x12\n" +
@@ -1358,7 +1370,8 @@ const file_moqom_admin_v1_moderation_proto_rawDesc = "" +
 	"\tban_scope\x18\x0f \x01(\x0e2\x18.moqom.admin.v1.BanScopeR\bbanScope\x12.\n" +
 	"\x06grants\x18\x10 \x01(\v2\x16.moqom.admin.v1.GrantsR\x06grants\x12\x1a\n" +
 	"\benforced\x18\x11 \x01(\bR\benforced\x12(\n" +
-	"\x10decided_by_model\x18\x12 \x01(\tR\x0edecidedByModel\"\xd2\x02\n" +
+	"\x10decided_by_model\x18\x12 \x01(\tR\x0edecidedByModel\x12#\n" +
+	"\rpolicy_change\x18\x13 \x01(\tR\fpolicyChange\"\xd2\x02\n" +
 	"\x18ListModerationLogRequest\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x12\n" +
 	"\x04room\x18\x02 \x01(\tR\x04room\x120\n" +

@@ -205,6 +205,25 @@ func recordingFromProto(wire adminpb.RecordingPolicy) RecordingPolicy {
 	}
 }
 
+func e2eeToProto(policy E2EEPolicy) adminpb.E2EEPolicy {
+	switch policy {
+	case E2EERequired:
+		return adminpb.E2EEPolicy_E2EE_POLICY_REQUIRED
+	case E2EEOptional:
+		return adminpb.E2EEPolicy_E2EE_POLICY_OPTIONAL
+	default:
+		// Unspecified, which the server reads as required.
+		return adminpb.E2EEPolicy_E2EE_POLICY_UNSPECIFIED
+	}
+}
+
+func e2eeFromProto(wire adminpb.E2EEPolicy) E2EEPolicy {
+	if wire == adminpb.E2EEPolicy_E2EE_POLICY_OPTIONAL {
+		return E2EEOptional
+	}
+	return E2EERequired
+}
+
 func codeToProto(code ModerationCode) adminpb.ModerationCode {
 	switch code {
 	case CodeAdultContent:
@@ -460,6 +479,7 @@ func policyToProto(policy Policy) *adminpb.RoomPolicy {
 		MaxParticipants: policy.MaxParticipants,
 		StageSlots:      policy.StageSlots,
 		WatchdogLimit:   policy.WatchdogLimit,
+		E2Ee:            e2eeToProto(policy.E2EE),
 	}
 }
 
@@ -477,6 +497,7 @@ func policyFromProto(wire *adminpb.RoomPolicy) Policy {
 		MaxParticipants: wire.GetMaxParticipants(),
 		StageSlots:      wire.GetStageSlots(),
 		WatchdogLimit:   wire.GetWatchdogLimit(),
+		E2EE:            e2eeFromProto(wire.GetE2Ee()),
 	}
 }
 
@@ -561,6 +582,7 @@ func entryFromProto(wire *adminpb.ModerationEntry) ModerationEntry {
 		Grants:         grantsFromProto(wire.GetGrants()),
 		Enforced:       wire.GetEnforced(),
 		DecidedByModel: wire.GetDecidedByModel(),
+		PolicyChange:   wire.GetPolicyChange(),
 	}
 }
 

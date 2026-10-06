@@ -14,6 +14,14 @@ a poor trade.
 go get github.com/moqom-cloud/moqom-go
 ```
 
+```go
+import moqom "github.com/moqom-cloud/moqom-go"
+```
+
+Documentation is at [moqom.dev](https://moqom.dev); the
+[Go backend guide](https://moqom.dev/guides/backend-go/) covers everything below
+in more depth.
+
 ## The call you will make most
 
 Your users authenticate however they already do. You then ask for a token naming
@@ -81,6 +89,48 @@ for {
 }
 ```
 
+## End-to-end encryption
+
+Rooms are end-to-end encrypted unless your backend says otherwise: an empty
+`Policy.E2EE` means `E2EERequired`. Relaxing it is a security change, so it needs a
+reason. It is written to the moderation log and announced on the room's event
+stream, and clients learn it from tokens minted afterwards.
+
+```go
+_, err = client.Room("live/42").UpdatePolicy(ctx, moqom.PolicyUpdate{
+    Policy: moqom.Policy{E2EE: moqom.E2EEOptional},
+    Fields: []string{"e2ee"},
+    Actor:  moqom.Actor{OnBehalfOf: "jane", Reason: "guest on a browser without keys"},
+})
+```
+
+Without `Reason` the call fails with `ErrInvalid`. Name `e2ee` in `Fields` so the
+call changes nothing else.
+
+## Over an overlay network
+
+The admin API can also be served as a dark OpenZiti service that binds no public
+port. This is an option for enterprise backends, not the default. A backend holding
+an enrolled identity dials through the overlay with `WithDialer`; the overlay's
+circuit is the encryption, so transport security is turned off explicitly:
+
+```go
+zctx, err := ziti.NewContext(identity)
+if err != nil {
+    return err
+}
+client, err := moqom.Dial("moqom-api",
+    moqom.WithDialer(func(_ context.Context, service string) (net.Conn, error) {
+        return zctx.Dial(service)
+    }),
+    moqom.WithoutTransportSecurity(),
+    moqom.WithTenant("acme"),
+    moqom.WithCredential(os.Getenv("MOQOM_SERVICE_KEY")))
+```
+
+The target is passed to the dialer as given, so `moqom-api` is a service name, not
+a DNS name. Your MOQOM contact issues the identity.
+
 ## Identity
 
 There are no numeric user IDs and nowhere to put one. A username is a string you
@@ -112,6 +162,17 @@ if _, err := room.Kick(ctx, request); errors.Is(err, moqom.ErrDenied) {
 `*moqom.Error` names the operation, keeps the status code, and reports
 `Retryable()` for a caller deciding whether to requeue.
 
+## Contribute
+
+Bug reports, fixes and examples are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md):
+the first pull request asks you to sign the CLA, and `go test ./...` runs with no
+account or network.
+
+## Donate
+
+The SDKs and samples are free. If they save you time, you can support the
+open-source work at [elliottwave.dev/donate](https://elliottwave.dev/donate/).
+
 ## Licence
 
-Apache-2.0.
+Apache-2.0. © 2026 Elliott Wave LLC.

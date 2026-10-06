@@ -95,6 +95,20 @@ const (
 	RecordingProhibited RecordingPolicy = "prohibited"
 )
 
+// E2EEPolicy is whether a room's media must be end-to-end encrypted.
+//
+// The empty value means E2EERequired: a room is encrypted unless your backend
+// says otherwise. Setting E2EEOptional needs Actor.Reason, and the change is
+// written to the moderation log and announced on the room's event stream.
+// Clients learn the policy from the `e2ee` claim in the tokens minted for the
+// room afterwards; an SDK holding no key refuses to publish into a required room.
+type E2EEPolicy string
+
+const (
+	E2EERequired E2EEPolicy = "required"
+	E2EEOptional E2EEPolicy = "optional"
+)
+
 // ModerationCode is why a session ended, when a moderator ended it.
 //
 // Sent to the client so it can say something true before the stream goes dark. A
@@ -189,6 +203,10 @@ type Policy struct {
 	// WatchdogLimit is how many observers may attach. Also a real limit: each one
 	// is a subscriber the relay fans out to.
 	WatchdogLimit uint32
+
+	// E2EE is whether media must be end-to-end encrypted. Empty is required, and a
+	// room read back from the server always states which.
+	E2EE E2EEPolicy
 }
 
 // Room is a room's state.
@@ -411,6 +429,11 @@ type ModerationEntry struct {
 	// DecidedByModel names the model and version when a classifier decided rather
 	// than a person.
 	DecidedByModel string
+
+	// PolicyChange is, for VerbUpdateRoomPolicy, the security settings that moved,
+	// as "field: from -> to" -- for example "e2ee: required -> optional". Empty
+	// when nothing of that kind changed.
+	PolicyChange string
 }
 
 // Token is a freshly minted client token.

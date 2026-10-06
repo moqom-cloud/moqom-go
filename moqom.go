@@ -62,6 +62,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -138,6 +140,7 @@ type settings struct {
 	insecure    bool
 	retry       retryPolicy
 	keys        func() string
+	dialer      func(ctx context.Context, address string) (net.Conn, error)
 }
 
 // WithTenant sets which tenant this client acts on.
@@ -218,6 +221,34 @@ func WithDialOptions(options ...grpc.DialOption) Option {
 	}
 }
 
+// WithDialer makes every connection with dial instead of over TCP.
+//
+// For a backend that reaches the admin API over an overlay network it embeds,
+// such as an OpenZiti service dialed through that network's SDK, where the
+// control plane binds no port at all:
+//
+//	ctx, _ := ziti.NewContext(identity)
+//	client, err := moqom.Dial("moqom-api",
+//	    moqom.WithDialer(func(_ context.Context, service string) (net.Conn, error) {
+//	        return ctx.Dial(service)
+//	    }),
+//	    moqom.WithoutTransportSecurity(), // the overlay's circuit is the encryption
+//	    moqom.WithTenant("acme"), moqom.WithCredential(key))
+//
+// dial receives the target as given, so a target with no scheme reaches it
+// unresolved: the name is the dialer's to interpret, not DNS's. Transport
+// security is not changed by this option; turning TLS off is still a separate,
+// explicit choice.
+func WithDialer(dial func(ctx context.Context, address string) (net.Conn, error)) Option {
+	return func(s *settings) error {
+		if dial == nil {
+			return errors.New("moqom: WithDialer needs a dial function")
+		}
+		s.dialer = dial
+		return nil
+	}
+}
+
 // WithConnection uses a connection the caller already has.
 //
 // For a process that multiplexes several APIs over one connection, or a test using
@@ -293,6 +324,12 @@ func Dial(target string, options ...Option) (*Client, error) {
 				// the default cannot leak a credential by omission.
 				requireSecurity: !settings.insecure,
 			}),
+		}
+		if settings.dialer != nil {
+			dialOptions = append(dialOptions, grpc.WithContextDialer(settings.dialer))
+			if !strings.Contains(target, "://") {
+				target = "passthrough:///" + target
+			}
 		}
 		dialOptions = append(dialOptions, settings.dialOptions...)
 
