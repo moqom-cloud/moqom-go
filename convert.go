@@ -207,20 +207,19 @@ func recordingFromProto(wire adminpb.RecordingPolicy) RecordingPolicy {
 
 func e2eeToProto(policy E2EEPolicy) adminpb.E2EEPolicy {
 	switch policy {
+	case "":
+		return adminpb.E2EEPolicy_E2EE_POLICY_UNSPECIFIED
 	case E2EERequired:
 		return adminpb.E2EEPolicy_E2EE_POLICY_REQUIRED
-	case E2EEOptional:
-		return adminpb.E2EEPolicy_E2EE_POLICY_OPTIONAL
 	default:
-		// Unspecified, which the server reads as required.
-		return adminpb.E2EEPolicy_E2EE_POLICY_UNSPECIFIED
+		// Anything else is an attempt to relax encryption, sent as the one value
+		// the server refuses, so the caller gets ErrInvalid rather than a room
+		// that quietly stayed encrypted.
+		return adminpb.E2EEPolicy_E2EE_POLICY_OPTIONAL
 	}
 }
 
-func e2eeFromProto(wire adminpb.E2EEPolicy) E2EEPolicy {
-	if wire == adminpb.E2EEPolicy_E2EE_POLICY_OPTIONAL {
-		return E2EEOptional
-	}
+func e2eeFromProto(adminpb.E2EEPolicy) E2EEPolicy {
 	return E2EERequired
 }
 

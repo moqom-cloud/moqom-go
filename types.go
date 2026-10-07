@@ -95,19 +95,13 @@ const (
 	RecordingProhibited RecordingPolicy = "prohibited"
 )
 
-// E2EEPolicy is whether a room's media must be end-to-end encrypted.
-//
-// The empty value means E2EERequired: a room is encrypted unless your backend
-// says otherwise. Setting E2EEOptional needs Actor.Reason, and the change is
-// written to the moderation log and announced on the room's event stream.
-// Clients learn the policy from the `e2ee` claim in the tokens minted for the
-// room afterwards; an SDK holding no key refuses to publish into a required room.
+// E2EEPolicy is whether a room's media must be end-to-end encrypted. It must:
+// E2EERequired is the only value, and the empty value means the same. There is
+// no turning it off; a recorder or classifier that needs the media joins the
+// room's group as a disclosed member and decrypts on your side.
 type E2EEPolicy string
 
-const (
-	E2EERequired E2EEPolicy = "required"
-	E2EEOptional E2EEPolicy = "optional"
-)
+const E2EERequired E2EEPolicy = "required"
 
 // ModerationCode is why a session ended, when a moderator ended it.
 //
@@ -204,8 +198,8 @@ type Policy struct {
 	// is a subscriber the relay fans out to.
 	WatchdogLimit uint32
 
-	// E2EE is whether media must be end-to-end encrypted. Empty is required, and a
-	// room read back from the server always states which.
+	// E2EE is always E2EERequired on a room read back from the server. Empty
+	// means the same when writing.
 	E2EE E2EEPolicy
 }
 
@@ -430,9 +424,9 @@ type ModerationEntry struct {
 	// than a person.
 	DecidedByModel string
 
-	// PolicyChange is, for VerbUpdateRoomPolicy, the security settings that moved,
-	// as "field: from -> to" -- for example "e2ee: required -> optional". Empty
-	// when nothing of that kind changed.
+	// PolicyChange is, for VerbUpdateRoomPolicy entries written when a room's
+	// encryption could still be relaxed, what moved, as "field: from -> to".
+	// Empty on every entry written since.
 	PolicyChange string
 }
 

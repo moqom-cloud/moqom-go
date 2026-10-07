@@ -91,21 +91,10 @@ for {
 
 ## End-to-end encryption
 
-Rooms are end-to-end encrypted unless your backend says otherwise: an empty
-`Policy.E2EE` means `E2EERequired`. Relaxing it is a security change, so it needs a
-reason. It is written to the moderation log and announced on the room's event
-stream, and clients learn it from tokens minted afterwards.
-
-```go
-_, err = client.Room("live/42").UpdatePolicy(ctx, moqom.PolicyUpdate{
-    Policy: moqom.Policy{E2EE: moqom.E2EEOptional},
-    Fields: []string{"e2ee"},
-    Actor:  moqom.Actor{OnBehalfOf: "jane", Reason: "guest on a browser without keys"},
-})
-```
-
-Without `Reason` the call fails with `ErrInvalid`. Name `e2ee` in `Fields` so the
-call changes nothing else.
+Every room is end-to-end encrypted, with post-quantum keys and signatures, and
+there is no way to turn it off: `Policy.E2EE` is always `E2EERequired`. A recorder
+or classifier that needs the media joins the room's group as a disclosed member and
+decrypts on your side.
 
 ## Over an overlay network
 

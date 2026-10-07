@@ -124,11 +124,7 @@ type PolicyUpdate struct {
 	//
 	// Leaving it empty applies all of them, which is a read-modify-write and will
 	// clobber a concurrent change. Naming the fields you meant to change is almost
-	// always what you want. An unmasked write that leaves E2EE empty sets the room
-	// back to required.
-	//
-	// Turning end-to-end encryption off -- Policy.E2EE = E2EEOptional with "e2ee"
-	// in Fields -- is refused with ErrInvalid unless Actor.Reason is set.
+	// always what you want. E2EE is required whatever the write says.
 	Fields []string
 
 	Actor Actor
