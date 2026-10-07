@@ -450,9 +450,9 @@ type Token struct {
 type VerificationKey struct {
 	KeyID string
 
-	// Algorithm as a JOSE identifier. EdDSA over Ed25519 today: small signatures,
-	// fast verification on a relay's hot path, and no curve parameters to get
-	// wrong.
+	// Algorithm as a JOSE identifier: ML-DSA-65 (FIPS 204), which every token
+	// is signed with, or EdDSA for an Ed25519 key kept only to verify tokens
+	// issued before the move.
 	Algorithm string
 
 	// JWK is the public key, as JSON.
