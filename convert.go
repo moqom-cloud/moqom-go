@@ -511,7 +511,11 @@ func directGrantFromProto(grant *adminpb.DirectGrant) *DirectGrant {
 	if grant == nil {
 		return nil
 	}
-	return &DirectGrant{Allowed: grant.GetAllowed(), MaxParticipants: grant.GetMaxParticipants()}
+	direct := &DirectGrant{Allowed: grant.GetAllowed(), MaxParticipants: grant.GetMaxParticipants()}
+	if stun := grant.GetStun(); stun != nil && stun.GetHost() != "" && stun.GetPort() != 0 && stun.GetPort() <= 0xffff {
+		direct.Stun = &StunEndpoint{Host: stun.GetHost(), Port: uint16(stun.GetPort())}
+	}
+	return direct
 }
 
 func policyFromProto(wire *adminpb.RoomPolicy) Policy {

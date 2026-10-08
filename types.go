@@ -227,6 +227,19 @@ const (
 type DirectGrant struct {
 	Allowed         bool
 	MaxParticipants uint32
+
+	// Stun is where the device asks for its public address before offering a
+	// direct path: the relays' STUN responder. Nil when direct paths are not
+	// allowed or the deployment names none. MoqomKit reads it as `stun`
+	// within `direct`, `{"host": …, "port": …}`.
+	Stun *StunEndpoint
+}
+
+// StunEndpoint is a STUN server: a host name or address literal and a UDP
+// port, usually 3478.
+type StunEndpoint struct {
+	Host string
+	Port uint16
 }
 
 // Room is a room's state.
