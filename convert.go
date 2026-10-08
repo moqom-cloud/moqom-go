@@ -205,6 +205,24 @@ func recordingFromProto(wire adminpb.RecordingPolicy) RecordingPolicy {
 	}
 }
 
+func e2eeToProto(policy E2EEPolicy) adminpb.E2EEPolicy {
+	switch policy {
+	case "":
+		return adminpb.E2EEPolicy_E2EE_POLICY_UNSPECIFIED
+	case E2EERequired:
+		return adminpb.E2EEPolicy_E2EE_POLICY_REQUIRED
+	default:
+		// Anything else is an attempt to relax encryption, sent as the one value
+		// the server refuses, so the caller gets ErrInvalid rather than a room
+		// that quietly stayed encrypted.
+		return adminpb.E2EEPolicy_E2EE_POLICY_OPTIONAL
+	}
+}
+
+func e2eeFromProto(adminpb.E2EEPolicy) E2EEPolicy {
+	return E2EERequired
+}
+
 func codeToProto(code ModerationCode) adminpb.ModerationCode {
 	switch code {
 	case CodeAdultContent:
@@ -460,7 +478,44 @@ func policyToProto(policy Policy) *adminpb.RoomPolicy {
 		MaxParticipants: policy.MaxParticipants,
 		StageSlots:      policy.StageSlots,
 		WatchdogLimit:   policy.WatchdogLimit,
+		E2Ee:            e2eeToProto(policy.E2EE),
+
+		DirectPaths:           directToProto(policy.DirectPaths),
+		MaxDirectParticipants: policy.MaxDirectParticipants,
 	}
+}
+
+func directToProto(direct DirectPaths) adminpb.DirectPaths {
+	switch direct {
+	case DirectAllowed:
+		return adminpb.DirectPaths_DIRECT_PATHS_ALLOWED
+	case DirectRelayOnly:
+		return adminpb.DirectPaths_DIRECT_PATHS_RELAY_ONLY
+	default:
+		return adminpb.DirectPaths_DIRECT_PATHS_UNSPECIFIED
+	}
+}
+
+func directFromProto(direct adminpb.DirectPaths) DirectPaths {
+	switch direct {
+	case adminpb.DirectPaths_DIRECT_PATHS_RELAY_ONLY:
+		return DirectRelayOnly
+	case adminpb.DirectPaths_DIRECT_PATHS_ALLOWED:
+		return DirectAllowed
+	default:
+		return ""
+	}
+}
+
+func directGrantFromProto(grant *adminpb.DirectGrant) *DirectGrant {
+	if grant == nil {
+		return nil
+	}
+	direct := &DirectGrant{Allowed: grant.GetAllowed(), MaxParticipants: grant.GetMaxParticipants()}
+	if stun := grant.GetStun(); stun != nil && stun.GetHost() != "" && stun.GetPort() != 0 && stun.GetPort() <= 0xffff {
+		direct.Stun = &StunEndpoint{Host: stun.GetHost(), Port: uint16(stun.GetPort())}
+	}
+	return direct
 }
 
 func policyFromProto(wire *adminpb.RoomPolicy) Policy {
@@ -477,6 +532,10 @@ func policyFromProto(wire *adminpb.RoomPolicy) Policy {
 		MaxParticipants: wire.GetMaxParticipants(),
 		StageSlots:      wire.GetStageSlots(),
 		WatchdogLimit:   wire.GetWatchdogLimit(),
+		E2EE:            e2eeFromProto(wire.GetE2Ee()),
+
+		DirectPaths:           directFromProto(wire.GetDirectPaths()),
+		MaxDirectParticipants: wire.GetMaxDirectParticipants(),
 	}
 }
 
@@ -561,6 +620,7 @@ func entryFromProto(wire *adminpb.ModerationEntry) ModerationEntry {
 		Grants:         grantsFromProto(wire.GetGrants()),
 		Enforced:       wire.GetEnforced(),
 		DecidedByModel: wire.GetDecidedByModel(),
+		PolicyChange:   wire.GetPolicyChange(),
 	}
 }
 

@@ -48,8 +48,9 @@ type TokenRequest struct {
 	Owner bool
 
 	// Lifetime is how long the token is good for. Zero takes the server's default.
-	// Short on purpose -- a token is the one credential that leaves the building,
-	// and until proof-of-possession lands a stolen one is replayable.
+	// Short on purpose -- a token is the one credential that leaves the building.
+	// Relays also require proof of the device key it is bound to, so a copied
+	// token is useless on another device.
 	Lifetime time.Duration
 
 	// Backstage joins backstage rather than the room proper. The token names the
@@ -105,6 +106,7 @@ func (c *Client) MintToken(ctx context.Context, request TokenRequest) (Token, er
 		ExpiresAt: timeFromProto(response.GetExpiresAt()),
 		Identity:  identityFromProto(response.GetIdentity()),
 		KeyID:     response.GetKeyId(),
+		Direct:    directGrantFromProto(response.GetDirect()),
 	}, nil
 }
 

@@ -95,6 +95,14 @@ const (
 	RecordingProhibited RecordingPolicy = "prohibited"
 )
 
+// E2EEPolicy is whether a room's media must be end-to-end encrypted. It must:
+// E2EERequired is the only value, and the empty value means the same. There is
+// no turning it off; a recorder or classifier that needs the media joins the
+// room's group as a disclosed member and decrypts on your side.
+type E2EEPolicy string
+
+const E2EERequired E2EEPolicy = "required"
+
 // ModerationCode is why a session ended, when a moderator ended it.
 //
 // Sent to the client so it can say something true before the stream goes dark. A
@@ -189,6 +197,49 @@ type Policy struct {
 	// WatchdogLimit is how many observers may attach. Also a real limit: each one
 	// is a subscriber the relay fans out to.
 	WatchdogLimit uint32
+
+	// E2EE is always E2EERequired on a room read back from the server. Empty
+	// means the same when writing.
+	E2EE E2EEPolicy
+
+	// DirectPaths is whether participants may carry media device to device,
+	// which tells each of them the others' IP addresses. Empty means allowed.
+	DirectPaths DirectPaths
+
+	// MaxDirectParticipants is the most participants the room may have and
+	// still use direct paths: 2 to 4, or zero for 4.
+	MaxDirectParticipants uint32
+}
+
+// DirectPaths is whether a room's participants may carry media device to
+// device rather than through a relay. Even where allowed, only an end-to-end
+// encrypted room within its limit, with no watchdog and no audience, where
+// every participant has opted in, does.
+type DirectPaths string
+
+const (
+	DirectAllowed   DirectPaths = "allowed"
+	DirectRelayOnly DirectPaths = "relay_only"
+)
+
+// DirectGrant is what a token's room allows of direct paths. Hand it to the
+// client with the token; MoqomKit reads it as `direct` beside `token`.
+type DirectGrant struct {
+	Allowed         bool
+	MaxParticipants uint32
+
+	// Stun is where the device asks for its public address before offering a
+	// direct path: the relays' STUN responder. Nil when direct paths are not
+	// allowed or the deployment names none. MoqomKit reads it as `stun`
+	// within `direct`, `{"host": …, "port": …}`.
+	Stun *StunEndpoint
+}
+
+// StunEndpoint is a STUN server: a host name or address literal and a UDP
+// port, usually 3478.
+type StunEndpoint struct {
+	Host string
+	Port uint16
 }
 
 // Room is a room's state.
@@ -411,6 +462,11 @@ type ModerationEntry struct {
 	// DecidedByModel names the model and version when a classifier decided rather
 	// than a person.
 	DecidedByModel string
+
+	// PolicyChange is, for VerbUpdateRoomPolicy entries written when a room's
+	// encryption could still be relaxed, what moved, as "field: from -> to".
+	// Empty on every entry written since.
+	PolicyChange string
 }
 
 // Token is a freshly minted client token.
@@ -427,15 +483,19 @@ type Token struct {
 
 	// KeyID is which signing key was used, matching a VerificationKey.
 	KeyID string
+
+	// Direct is what the token's room allows of direct paths; nil for a token
+	// that names no room.
+	Direct *DirectGrant
 }
 
 // VerificationKey is a public key tokens can be verified with.
 type VerificationKey struct {
 	KeyID string
 
-	// Algorithm as a JOSE identifier. EdDSA over Ed25519 today: small signatures,
-	// fast verification on a relay's hot path, and no curve parameters to get
-	// wrong.
+	// Algorithm as a JOSE identifier: ML-DSA-65 (FIPS 204), which every token
+	// is signed with, or EdDSA for an Ed25519 key kept only to verify tokens
+	// issued before the move.
 	Algorithm string
 
 	// JWK is the public key, as JSON.

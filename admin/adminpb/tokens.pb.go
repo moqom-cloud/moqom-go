@@ -262,7 +262,10 @@ type MintClientTokenResponse struct {
 	// without reimplementing the derivation.
 	Identity *Identity `protobuf:"bytes,3,opt,name=identity,proto3" json:"identity,omitempty"`
 	// Which key signed it, matching a `VerificationKey.key_id`.
-	KeyId         string `protobuf:"bytes,4,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+	KeyId string `protobuf:"bytes,4,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+	// What the token's room allows of direct paths, for the backend to hand to
+	// the client with the token. Unset for a token that names no room.
+	Direct        *DirectGrant `protobuf:"bytes,5,opt,name=direct,proto3" json:"direct,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -323,6 +326,13 @@ func (x *MintClientTokenResponse) GetKeyId() string {
 		return x.KeyId
 	}
 	return ""
+}
+
+func (x *MintClientTokenResponse) GetDirect() *DirectGrant {
+	if x != nil {
+		return x.Direct
+	}
+	return nil
 }
 
 type ListVerificationKeysRequest struct {
@@ -522,13 +532,14 @@ const file_moqom_admin_v1_tokens_proto_rawDesc = "" +
 	"\fage_verified\x18\t \x01(\bR\vageVerified\x12\x1f\n" +
 	"\varrived_via\x18\n" +
 	" \x01(\tR\n" +
-	"arrivedVia\"\xb7\x01\n" +
+	"arrivedVia\"\xec\x01\n" +
 	"\x17MintClientTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
 	"\n" +
 	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x124\n" +
 	"\bidentity\x18\x03 \x01(\v2\x18.moqom.admin.v1.IdentityR\bidentity\x12\x15\n" +
-	"\x06key_id\x18\x04 \x01(\tR\x05keyId\"5\n" +
+	"\x06key_id\x18\x04 \x01(\tR\x05keyId\x123\n" +
+	"\x06direct\x18\x05 \x01(\v2\x1b.moqom.admin.v1.DirectGrantR\x06direct\"5\n" +
 	"\x1bListVerificationKeysRequest\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\"\xce\x01\n" +
 	"\x0fVerificationKey\x12\x15\n" +
@@ -576,6 +587,7 @@ var file_moqom_admin_v1_tokens_proto_goTypes = []any{
 	(*durationpb.Duration)(nil),          // 8: google.protobuf.Duration
 	(*timestamppb.Timestamp)(nil),        // 9: google.protobuf.Timestamp
 	(*Identity)(nil),                     // 10: moqom.admin.v1.Identity
+	(*DirectGrant)(nil),                  // 11: moqom.admin.v1.DirectGrant
 }
 var file_moqom_admin_v1_tokens_proto_depIdxs = []int32{
 	6,  // 0: moqom.admin.v1.MintClientTokenRequest.grants:type_name -> moqom.admin.v1.Grants
@@ -583,19 +595,20 @@ var file_moqom_admin_v1_tokens_proto_depIdxs = []int32{
 	8,  // 2: moqom.admin.v1.MintClientTokenRequest.lifetime:type_name -> google.protobuf.Duration
 	9,  // 3: moqom.admin.v1.MintClientTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
 	10, // 4: moqom.admin.v1.MintClientTokenResponse.identity:type_name -> moqom.admin.v1.Identity
-	9,  // 5: moqom.admin.v1.VerificationKey.not_before:type_name -> google.protobuf.Timestamp
-	9,  // 6: moqom.admin.v1.VerificationKey.retires_at:type_name -> google.protobuf.Timestamp
-	4,  // 7: moqom.admin.v1.ListVerificationKeysResponse.keys:type_name -> moqom.admin.v1.VerificationKey
-	0,  // 8: moqom.admin.v1.ListVerificationKeysResponse.binding:type_name -> moqom.admin.v1.TokenBinding
-	1,  // 9: moqom.admin.v1.Tokens.MintClientToken:input_type -> moqom.admin.v1.MintClientTokenRequest
-	3,  // 10: moqom.admin.v1.Tokens.ListVerificationKeys:input_type -> moqom.admin.v1.ListVerificationKeysRequest
-	2,  // 11: moqom.admin.v1.Tokens.MintClientToken:output_type -> moqom.admin.v1.MintClientTokenResponse
-	5,  // 12: moqom.admin.v1.Tokens.ListVerificationKeys:output_type -> moqom.admin.v1.ListVerificationKeysResponse
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	11, // 5: moqom.admin.v1.MintClientTokenResponse.direct:type_name -> moqom.admin.v1.DirectGrant
+	9,  // 6: moqom.admin.v1.VerificationKey.not_before:type_name -> google.protobuf.Timestamp
+	9,  // 7: moqom.admin.v1.VerificationKey.retires_at:type_name -> google.protobuf.Timestamp
+	4,  // 8: moqom.admin.v1.ListVerificationKeysResponse.keys:type_name -> moqom.admin.v1.VerificationKey
+	0,  // 9: moqom.admin.v1.ListVerificationKeysResponse.binding:type_name -> moqom.admin.v1.TokenBinding
+	1,  // 10: moqom.admin.v1.Tokens.MintClientToken:input_type -> moqom.admin.v1.MintClientTokenRequest
+	3,  // 11: moqom.admin.v1.Tokens.ListVerificationKeys:input_type -> moqom.admin.v1.ListVerificationKeysRequest
+	2,  // 12: moqom.admin.v1.Tokens.MintClientToken:output_type -> moqom.admin.v1.MintClientTokenResponse
+	5,  // 13: moqom.admin.v1.Tokens.ListVerificationKeys:output_type -> moqom.admin.v1.ListVerificationKeysResponse
+	12, // [12:14] is the sub-list for method output_type
+	10, // [10:12] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_moqom_admin_v1_tokens_proto_init() }

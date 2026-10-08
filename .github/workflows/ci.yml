@@ -62,8 +62,10 @@ jobs:
   #
   # MOQOM_REPO_TOKEN is an organisation secret with read access to moqom-cloud.
   # GITHUB_TOKEN cannot stand in for it, being scoped to this repository alone.
+  # A pull request from a fork is not given secrets, so it skips this job.
   proto:
     name: Generated bindings
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

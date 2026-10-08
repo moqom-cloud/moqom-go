@@ -630,3 +630,45 @@ func TestRoleSummarisesGrants(t *testing.T) {
 		}
 	}
 }
+
+// A backend on an overlay network dials a service name, not an address. The
+// name must reach the dialer as given, unresolved, and the call must work over
+// whatever connection the dialer returns.
+func TestWithDialerCarriesCallsOverTheGivenConnection(t *testing.T) {
+	listener := bufconn.Listen(1 << 20)
+	server := grpc.NewServer()
+	backing := &stub{}
+	adminpb.RegisterRoomsServer(server, backing)
+	go func() { _ = server.Serve(listener) }()
+	t.Cleanup(func() { server.Stop(); _ = listener.Close() })
+
+	var dialed []string
+	client, err := moqom.Dial("moqom-dev-api",
+		moqom.WithDialer(func(ctx context.Context, address string) (net.Conn, error) {
+			dialed = append(dialed, address)
+			return listener.DialContext(ctx)
+		}),
+		moqom.WithoutTransportSecurity(),
+		moqom.WithTenant("acme"),
+		moqom.WithCredential("k"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = client.Close() })
+
+	room, err := client.Room("live").Get(context.Background())
+	if err != nil {
+		t.Fatalf("a call over the dialer failed: %v", err)
+	}
+	if room.Name != "live" {
+		t.Errorf("got room %q", room.Name)
+	}
+	if len(dialed) == 0 || dialed[0] != "moqom-dev-api" {
+		t.Errorf("the dialer was given %v, want the service name as written", dialed)
+	}
+
+	if _, err := moqom.Dial("x", moqom.WithDialer(nil), moqom.WithTenant("acme"), moqom.WithCredential("k")); err == nil {
+		t.Error("a nil dialer was accepted")
+	}
+}

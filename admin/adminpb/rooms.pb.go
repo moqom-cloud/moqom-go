@@ -145,6 +145,125 @@ func (RecordingPolicy) EnumDescriptor() ([]byte, []int) {
 	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{1}
 }
 
+// Whether a room's media must be end-to-end encrypted. It must, always: there
+// is no way to turn it off. Unspecified and `E2EE_POLICY_REQUIRED` are
+// accepted and mean the same; `E2EE_POLICY_OPTIONAL` is refused with
+// INVALID_ARGUMENT and kept only so that an old backend's request fails
+// loudly rather than decoding as something else. A recorder or classifier
+// that needs the media joins the room's MLS group as a disclosed member and
+// decrypts on the tenant's side.
+//
+// Clients learn the value from the `e2ee` claim in their token, and an SDK
+// that holds no key refuses to publish.
+type E2EEPolicy int32
+
+const (
+	E2EEPolicy_E2EE_POLICY_UNSPECIFIED E2EEPolicy = 0
+	E2EEPolicy_E2EE_POLICY_REQUIRED    E2EEPolicy = 1
+	// Deprecated: Marked as deprecated in moqom/admin/v1/rooms.proto.
+	E2EEPolicy_E2EE_POLICY_OPTIONAL E2EEPolicy = 2
+)
+
+// Enum value maps for E2EEPolicy.
+var (
+	E2EEPolicy_name = map[int32]string{
+		0: "E2EE_POLICY_UNSPECIFIED",
+		1: "E2EE_POLICY_REQUIRED",
+		2: "E2EE_POLICY_OPTIONAL",
+	}
+	E2EEPolicy_value = map[string]int32{
+		"E2EE_POLICY_UNSPECIFIED": 0,
+		"E2EE_POLICY_REQUIRED":    1,
+		"E2EE_POLICY_OPTIONAL":    2,
+	}
+)
+
+func (x E2EEPolicy) Enum() *E2EEPolicy {
+	p := new(E2EEPolicy)
+	*p = x
+	return p
+}
+
+func (x E2EEPolicy) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (E2EEPolicy) Descriptor() protoreflect.EnumDescriptor {
+	return file_moqom_admin_v1_rooms_proto_enumTypes[2].Descriptor()
+}
+
+func (E2EEPolicy) Type() protoreflect.EnumType {
+	return &file_moqom_admin_v1_rooms_proto_enumTypes[2]
+}
+
+func (x E2EEPolicy) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use E2EEPolicy.Descriptor instead.
+func (E2EEPolicy) EnumDescriptor() ([]byte, []int) {
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{2}
+}
+
+// Whether a room's participants may carry media device to device rather than
+// through a relay.
+//
+// A direct path tells each participant the others' IP addresses, so a room
+// whose users must not learn them is `DIRECT_PATHS_RELAY_ONLY`. Even where
+// allowed, only an end-to-end encrypted room of at most
+// `max_direct_participants`, with no watchdog and no audience, where every
+// participant has opted in, goes direct. Clients learn the policy with each
+// token (`MintClientTokenResponse.direct`); a client that does not opt in keeps
+// the whole room on the relay.
+type DirectPaths int32
+
+const (
+	DirectPaths_DIRECT_PATHS_UNSPECIFIED DirectPaths = 0
+	DirectPaths_DIRECT_PATHS_ALLOWED     DirectPaths = 1
+	DirectPaths_DIRECT_PATHS_RELAY_ONLY  DirectPaths = 2
+)
+
+// Enum value maps for DirectPaths.
+var (
+	DirectPaths_name = map[int32]string{
+		0: "DIRECT_PATHS_UNSPECIFIED",
+		1: "DIRECT_PATHS_ALLOWED",
+		2: "DIRECT_PATHS_RELAY_ONLY",
+	}
+	DirectPaths_value = map[string]int32{
+		"DIRECT_PATHS_UNSPECIFIED": 0,
+		"DIRECT_PATHS_ALLOWED":     1,
+		"DIRECT_PATHS_RELAY_ONLY":  2,
+	}
+)
+
+func (x DirectPaths) Enum() *DirectPaths {
+	p := new(DirectPaths)
+	*p = x
+	return p
+}
+
+func (x DirectPaths) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DirectPaths) Descriptor() protoreflect.EnumDescriptor {
+	return file_moqom_admin_v1_rooms_proto_enumTypes[3].Descriptor()
+}
+
+func (DirectPaths) Type() protoreflect.EnumType {
+	return &file_moqom_admin_v1_rooms_proto_enumTypes[3]
+}
+
+func (x DirectPaths) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DirectPaths.Descriptor instead.
+func (DirectPaths) EnumDescriptor() ([]byte, []int) {
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{3}
+}
+
 type WatchdogKind int32
 
 const (
@@ -187,11 +306,11 @@ func (x WatchdogKind) String() string {
 }
 
 func (WatchdogKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_moqom_admin_v1_rooms_proto_enumTypes[2].Descriptor()
+	return file_moqom_admin_v1_rooms_proto_enumTypes[4].Descriptor()
 }
 
 func (WatchdogKind) Type() protoreflect.EnumType {
-	return &file_moqom_admin_v1_rooms_proto_enumTypes[2]
+	return &file_moqom_admin_v1_rooms_proto_enumTypes[4]
 }
 
 func (x WatchdogKind) Number() protoreflect.EnumNumber {
@@ -200,7 +319,7 @@ func (x WatchdogKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WatchdogKind.Descriptor instead.
 func (WatchdogKind) EnumDescriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{2}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{4}
 }
 
 type WatchdogOperator int32
@@ -239,11 +358,11 @@ func (x WatchdogOperator) String() string {
 }
 
 func (WatchdogOperator) Descriptor() protoreflect.EnumDescriptor {
-	return file_moqom_admin_v1_rooms_proto_enumTypes[3].Descriptor()
+	return file_moqom_admin_v1_rooms_proto_enumTypes[5].Descriptor()
 }
 
 func (WatchdogOperator) Type() protoreflect.EnumType {
-	return &file_moqom_admin_v1_rooms_proto_enumTypes[3]
+	return &file_moqom_admin_v1_rooms_proto_enumTypes[5]
 }
 
 func (x WatchdogOperator) Number() protoreflect.EnumNumber {
@@ -252,7 +371,7 @@ func (x WatchdogOperator) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WatchdogOperator.Descriptor instead.
 func (WatchdogOperator) EnumDescriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{3}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{5}
 }
 
 // Whether a watchdog is working, which is not whether it is present.
@@ -297,11 +416,11 @@ func (x WatchdogHealth) String() string {
 }
 
 func (WatchdogHealth) Descriptor() protoreflect.EnumDescriptor {
-	return file_moqom_admin_v1_rooms_proto_enumTypes[4].Descriptor()
+	return file_moqom_admin_v1_rooms_proto_enumTypes[6].Descriptor()
 }
 
 func (WatchdogHealth) Type() protoreflect.EnumType {
-	return &file_moqom_admin_v1_rooms_proto_enumTypes[4]
+	return &file_moqom_admin_v1_rooms_proto_enumTypes[6]
 }
 
 func (x WatchdogHealth) Number() protoreflect.EnumNumber {
@@ -310,7 +429,7 @@ func (x WatchdogHealth) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WatchdogHealth.Descriptor instead.
 func (WatchdogHealth) EnumDescriptor() ([]byte, []int) {
-	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{4}
+	return file_moqom_admin_v1_rooms_proto_rawDescGZIP(), []int{6}
 }
 
 type AgeGate struct {
@@ -391,8 +510,18 @@ type RoomPolicy struct {
 	// How many watchdogs may attach. Also 8 by default, and also a real limit:
 	// each one is a subscriber the relay fans out to.
 	WatchdogLimit uint32 `protobuf:"varint,6,opt,name=watchdog_limit,json=watchdogLimit,proto3" json:"watchdog_limit,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Unset reads as `E2EE_POLICY_REQUIRED`, and a room read back from the server
+	// always states it. `E2EE_POLICY_OPTIONAL` is refused.
+	E2Ee E2EEPolicy `protobuf:"varint,7,opt,name=e2ee,proto3,enum=moqom.admin.v1.E2EEPolicy" json:"e2ee,omitempty"`
+	// Whether participants may carry media device to device. Unset reads as
+	// `DIRECT_PATHS_ALLOWED`. See `DirectPaths`.
+	DirectPaths DirectPaths `protobuf:"varint,8,opt,name=direct_paths,json=directPaths,proto3,enum=moqom.admin.v1.DirectPaths" json:"direct_paths,omitempty"`
+	// The most participants the room may have and still use direct paths. Zero
+	// reads as 4, which is also the most allowed: every extra peer costs each
+	// publisher a full upload.
+	MaxDirectParticipants uint32 `protobuf:"varint,9,opt,name=max_direct_participants,json=maxDirectParticipants,proto3" json:"max_direct_participants,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *RoomPolicy) Reset() {
@@ -463,6 +592,27 @@ func (x *RoomPolicy) GetStageSlots() uint32 {
 func (x *RoomPolicy) GetWatchdogLimit() uint32 {
 	if x != nil {
 		return x.WatchdogLimit
+	}
+	return 0
+}
+
+func (x *RoomPolicy) GetE2Ee() E2EEPolicy {
+	if x != nil {
+		return x.E2Ee
+	}
+	return E2EEPolicy_E2EE_POLICY_UNSPECIFIED
+}
+
+func (x *RoomPolicy) GetDirectPaths() DirectPaths {
+	if x != nil {
+		return x.DirectPaths
+	}
+	return DirectPaths_DIRECT_PATHS_UNSPECIFIED
+}
+
+func (x *RoomPolicy) GetMaxDirectParticipants() uint32 {
+	if x != nil {
+		return x.MaxDirectParticipants
 	}
 	return 0
 }
@@ -1902,7 +2052,7 @@ const file_moqom_admin_v1_rooms_proto_rawDesc = "" +
 	"\aAgeGate\x12\x1f\n" +
 	"\vminimum_age\x18\x01 \x01(\rR\n" +
 	"minimumAge\x121\n" +
-	"\x14require_verification\x18\x02 \x01(\bR\x13requireVerification\"\x99\x02\n" +
+	"\x14require_verification\x18\x02 \x01(\bR\x13requireVerification\"\xc1\x03\n" +
 	"\n" +
 	"RoomPolicy\x122\n" +
 	"\bage_gate\x18\x01 \x01(\v2\x17.moqom.admin.v1.AgeGateR\aageGate\x12=\n" +
@@ -1911,7 +2061,10 @@ const file_moqom_admin_v1_rooms_proto_rawDesc = "" +
 	"\x10max_participants\x18\x04 \x01(\rR\x0fmaxParticipants\x12\x1f\n" +
 	"\vstage_slots\x18\x05 \x01(\rR\n" +
 	"stageSlots\x12%\n" +
-	"\x0ewatchdog_limit\x18\x06 \x01(\rR\rwatchdogLimit\"\xdf\x04\n" +
+	"\x0ewatchdog_limit\x18\x06 \x01(\rR\rwatchdogLimit\x12.\n" +
+	"\x04e2ee\x18\a \x01(\x0e2\x1a.moqom.admin.v1.E2EEPolicyR\x04e2ee\x12>\n" +
+	"\fdirect_paths\x18\b \x01(\x0e2\x1b.moqom.admin.v1.DirectPathsR\vdirectPaths\x126\n" +
+	"\x17max_direct_participants\x18\t \x01(\rR\x15maxDirectParticipants\"\xdf\x04\n" +
 	"\x04Room\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x12\n" +
 	"\x04room\x18\x02 \x01(\tR\x04room\x12\x1c\n" +
@@ -2055,7 +2208,16 @@ const file_moqom_admin_v1_rooms_proto_rawDesc = "" +
 	"\x1cRECORDING_POLICY_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18RECORDING_POLICY_ALLOWED\x10\x01\x12\x1d\n" +
 	"\x19RECORDING_POLICY_REQUIRED\x10\x02\x12\x1f\n" +
-	"\x1bRECORDING_POLICY_PROHIBITED\x10\x03*\xb9\x01\n" +
+	"\x1bRECORDING_POLICY_PROHIBITED\x10\x03*a\n" +
+	"\n" +
+	"E2EEPolicy\x12\x1b\n" +
+	"\x17E2EE_POLICY_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14E2EE_POLICY_REQUIRED\x10\x01\x12\x1c\n" +
+	"\x14E2EE_POLICY_OPTIONAL\x10\x02\x1a\x02\b\x01*b\n" +
+	"\vDirectPaths\x12\x1c\n" +
+	"\x18DIRECT_PATHS_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14DIRECT_PATHS_ALLOWED\x10\x01\x12\x1b\n" +
+	"\x17DIRECT_PATHS_RELAY_ONLY\x10\x02*\xb9\x01\n" +
 	"\fWatchdogKind\x12\x1d\n" +
 	"\x19WATCHDOG_KIND_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17WATCHDOG_KIND_RECORDING\x10\x01\x12\x18\n" +
@@ -2098,103 +2260,107 @@ func file_moqom_admin_v1_rooms_proto_rawDescGZIP() []byte {
 	return file_moqom_admin_v1_rooms_proto_rawDescData
 }
 
-var file_moqom_admin_v1_rooms_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_moqom_admin_v1_rooms_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
 var file_moqom_admin_v1_rooms_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_moqom_admin_v1_rooms_proto_goTypes = []any{
 	(RoomLifecycle)(0),               // 0: moqom.admin.v1.RoomLifecycle
 	(RecordingPolicy)(0),             // 1: moqom.admin.v1.RecordingPolicy
-	(WatchdogKind)(0),                // 2: moqom.admin.v1.WatchdogKind
-	(WatchdogOperator)(0),            // 3: moqom.admin.v1.WatchdogOperator
-	(WatchdogHealth)(0),              // 4: moqom.admin.v1.WatchdogHealth
-	(*AgeGate)(nil),                  // 5: moqom.admin.v1.AgeGate
-	(*RoomPolicy)(nil),               // 6: moqom.admin.v1.RoomPolicy
-	(*Room)(nil),                     // 7: moqom.admin.v1.Room
-	(*Participant)(nil),              // 8: moqom.admin.v1.Participant
-	(*Audience)(nil),                 // 9: moqom.admin.v1.Audience
-	(*Watchdog)(nil),                 // 10: moqom.admin.v1.Watchdog
-	(*CreateRoomRequest)(nil),        // 11: moqom.admin.v1.CreateRoomRequest
-	(*GetRoomRequest)(nil),           // 12: moqom.admin.v1.GetRoomRequest
-	(*ListRoomsRequest)(nil),         // 13: moqom.admin.v1.ListRoomsRequest
-	(*ListRoomsResponse)(nil),        // 14: moqom.admin.v1.ListRoomsResponse
-	(*UpdateRoomPolicyRequest)(nil),  // 15: moqom.admin.v1.UpdateRoomPolicyRequest
-	(*CloseRoomRequest)(nil),         // 16: moqom.admin.v1.CloseRoomRequest
-	(*ListParticipantsRequest)(nil),  // 17: moqom.admin.v1.ListParticipantsRequest
-	(*ListParticipantsResponse)(nil), // 18: moqom.admin.v1.ListParticipantsResponse
-	(*GetParticipantRequest)(nil),    // 19: moqom.admin.v1.GetParticipantRequest
-	(*AttachWatchdogRequest)(nil),    // 20: moqom.admin.v1.AttachWatchdogRequest
-	(*DetachWatchdogRequest)(nil),    // 21: moqom.admin.v1.DetachWatchdogRequest
-	(*ListWatchdogsRequest)(nil),     // 22: moqom.admin.v1.ListWatchdogsRequest
-	(*ListWatchdogsResponse)(nil),    // 23: moqom.admin.v1.ListWatchdogsResponse
-	(*timestamppb.Timestamp)(nil),    // 24: google.protobuf.Timestamp
-	(*Identity)(nil),                 // 25: moqom.admin.v1.Identity
-	(*Grants)(nil),                   // 26: moqom.admin.v1.Grants
-	(Presence)(0),                    // 27: moqom.admin.v1.Presence
-	(MediaKind)(0),                   // 28: moqom.admin.v1.MediaKind
-	(*ActorContext)(nil),             // 29: moqom.admin.v1.ActorContext
-	(ModerationCode)(0),              // 30: moqom.admin.v1.ModerationCode
+	(E2EEPolicy)(0),                  // 2: moqom.admin.v1.E2EEPolicy
+	(DirectPaths)(0),                 // 3: moqom.admin.v1.DirectPaths
+	(WatchdogKind)(0),                // 4: moqom.admin.v1.WatchdogKind
+	(WatchdogOperator)(0),            // 5: moqom.admin.v1.WatchdogOperator
+	(WatchdogHealth)(0),              // 6: moqom.admin.v1.WatchdogHealth
+	(*AgeGate)(nil),                  // 7: moqom.admin.v1.AgeGate
+	(*RoomPolicy)(nil),               // 8: moqom.admin.v1.RoomPolicy
+	(*Room)(nil),                     // 9: moqom.admin.v1.Room
+	(*Participant)(nil),              // 10: moqom.admin.v1.Participant
+	(*Audience)(nil),                 // 11: moqom.admin.v1.Audience
+	(*Watchdog)(nil),                 // 12: moqom.admin.v1.Watchdog
+	(*CreateRoomRequest)(nil),        // 13: moqom.admin.v1.CreateRoomRequest
+	(*GetRoomRequest)(nil),           // 14: moqom.admin.v1.GetRoomRequest
+	(*ListRoomsRequest)(nil),         // 15: moqom.admin.v1.ListRoomsRequest
+	(*ListRoomsResponse)(nil),        // 16: moqom.admin.v1.ListRoomsResponse
+	(*UpdateRoomPolicyRequest)(nil),  // 17: moqom.admin.v1.UpdateRoomPolicyRequest
+	(*CloseRoomRequest)(nil),         // 18: moqom.admin.v1.CloseRoomRequest
+	(*ListParticipantsRequest)(nil),  // 19: moqom.admin.v1.ListParticipantsRequest
+	(*ListParticipantsResponse)(nil), // 20: moqom.admin.v1.ListParticipantsResponse
+	(*GetParticipantRequest)(nil),    // 21: moqom.admin.v1.GetParticipantRequest
+	(*AttachWatchdogRequest)(nil),    // 22: moqom.admin.v1.AttachWatchdogRequest
+	(*DetachWatchdogRequest)(nil),    // 23: moqom.admin.v1.DetachWatchdogRequest
+	(*ListWatchdogsRequest)(nil),     // 24: moqom.admin.v1.ListWatchdogsRequest
+	(*ListWatchdogsResponse)(nil),    // 25: moqom.admin.v1.ListWatchdogsResponse
+	(*timestamppb.Timestamp)(nil),    // 26: google.protobuf.Timestamp
+	(*Identity)(nil),                 // 27: moqom.admin.v1.Identity
+	(*Grants)(nil),                   // 28: moqom.admin.v1.Grants
+	(Presence)(0),                    // 29: moqom.admin.v1.Presence
+	(MediaKind)(0),                   // 30: moqom.admin.v1.MediaKind
+	(*ActorContext)(nil),             // 31: moqom.admin.v1.ActorContext
+	(ModerationCode)(0),              // 32: moqom.admin.v1.ModerationCode
 }
 var file_moqom_admin_v1_rooms_proto_depIdxs = []int32{
-	5,  // 0: moqom.admin.v1.RoomPolicy.age_gate:type_name -> moqom.admin.v1.AgeGate
+	7,  // 0: moqom.admin.v1.RoomPolicy.age_gate:type_name -> moqom.admin.v1.AgeGate
 	1,  // 1: moqom.admin.v1.RoomPolicy.recording:type_name -> moqom.admin.v1.RecordingPolicy
-	6,  // 2: moqom.admin.v1.Room.policy:type_name -> moqom.admin.v1.RoomPolicy
-	0,  // 3: moqom.admin.v1.Room.lifecycle:type_name -> moqom.admin.v1.RoomLifecycle
-	24, // 4: moqom.admin.v1.Room.starts_at:type_name -> google.protobuf.Timestamp
-	24, // 5: moqom.admin.v1.Room.created_at:type_name -> google.protobuf.Timestamp
-	24, // 6: moqom.admin.v1.Room.ended_at:type_name -> google.protobuf.Timestamp
-	25, // 7: moqom.admin.v1.Room.acting_host:type_name -> moqom.admin.v1.Identity
-	9,  // 8: moqom.admin.v1.Room.audiences:type_name -> moqom.admin.v1.Audience
-	25, // 9: moqom.admin.v1.Participant.identity:type_name -> moqom.admin.v1.Identity
-	26, // 10: moqom.admin.v1.Participant.grants:type_name -> moqom.admin.v1.Grants
-	27, // 11: moqom.admin.v1.Participant.presence:type_name -> moqom.admin.v1.Presence
-	28, // 12: moqom.admin.v1.Participant.self_muted:type_name -> moqom.admin.v1.MediaKind
-	28, // 13: moqom.admin.v1.Participant.forced_muted_for_everyone:type_name -> moqom.admin.v1.MediaKind
-	28, // 14: moqom.admin.v1.Participant.forced_muted_for_audience:type_name -> moqom.admin.v1.MediaKind
-	24, // 15: moqom.admin.v1.Participant.joined_at:type_name -> google.protobuf.Timestamp
-	2,  // 16: moqom.admin.v1.Watchdog.kind:type_name -> moqom.admin.v1.WatchdogKind
-	3,  // 17: moqom.admin.v1.Watchdog.operated_by:type_name -> moqom.admin.v1.WatchdogOperator
-	4,  // 18: moqom.admin.v1.Watchdog.health:type_name -> moqom.admin.v1.WatchdogHealth
-	24, // 19: moqom.admin.v1.Watchdog.attached_at:type_name -> google.protobuf.Timestamp
-	6,  // 20: moqom.admin.v1.CreateRoomRequest.policy:type_name -> moqom.admin.v1.RoomPolicy
-	24, // 21: moqom.admin.v1.CreateRoomRequest.starts_at:type_name -> google.protobuf.Timestamp
-	29, // 22: moqom.admin.v1.CreateRoomRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	0,  // 23: moqom.admin.v1.ListRoomsRequest.lifecycle:type_name -> moqom.admin.v1.RoomLifecycle
-	7,  // 24: moqom.admin.v1.ListRoomsResponse.rooms:type_name -> moqom.admin.v1.Room
-	6,  // 25: moqom.admin.v1.UpdateRoomPolicyRequest.policy:type_name -> moqom.admin.v1.RoomPolicy
-	29, // 26: moqom.admin.v1.UpdateRoomPolicyRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	30, // 27: moqom.admin.v1.CloseRoomRequest.code:type_name -> moqom.admin.v1.ModerationCode
-	29, // 28: moqom.admin.v1.CloseRoomRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	8,  // 29: moqom.admin.v1.ListParticipantsResponse.participants:type_name -> moqom.admin.v1.Participant
-	25, // 30: moqom.admin.v1.GetParticipantRequest.identity:type_name -> moqom.admin.v1.Identity
-	2,  // 31: moqom.admin.v1.AttachWatchdogRequest.kind:type_name -> moqom.admin.v1.WatchdogKind
-	3,  // 32: moqom.admin.v1.AttachWatchdogRequest.operated_by:type_name -> moqom.admin.v1.WatchdogOperator
-	29, // 33: moqom.admin.v1.AttachWatchdogRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	29, // 34: moqom.admin.v1.DetachWatchdogRequest.actor:type_name -> moqom.admin.v1.ActorContext
-	10, // 35: moqom.admin.v1.ListWatchdogsResponse.watchdogs:type_name -> moqom.admin.v1.Watchdog
-	11, // 36: moqom.admin.v1.Rooms.CreateRoom:input_type -> moqom.admin.v1.CreateRoomRequest
-	12, // 37: moqom.admin.v1.Rooms.GetRoom:input_type -> moqom.admin.v1.GetRoomRequest
-	13, // 38: moqom.admin.v1.Rooms.ListRooms:input_type -> moqom.admin.v1.ListRoomsRequest
-	15, // 39: moqom.admin.v1.Rooms.UpdateRoomPolicy:input_type -> moqom.admin.v1.UpdateRoomPolicyRequest
-	16, // 40: moqom.admin.v1.Rooms.CloseRoom:input_type -> moqom.admin.v1.CloseRoomRequest
-	17, // 41: moqom.admin.v1.Rooms.ListParticipants:input_type -> moqom.admin.v1.ListParticipantsRequest
-	19, // 42: moqom.admin.v1.Rooms.GetParticipant:input_type -> moqom.admin.v1.GetParticipantRequest
-	20, // 43: moqom.admin.v1.Rooms.AttachWatchdog:input_type -> moqom.admin.v1.AttachWatchdogRequest
-	21, // 44: moqom.admin.v1.Rooms.DetachWatchdog:input_type -> moqom.admin.v1.DetachWatchdogRequest
-	22, // 45: moqom.admin.v1.Rooms.ListWatchdogs:input_type -> moqom.admin.v1.ListWatchdogsRequest
-	7,  // 46: moqom.admin.v1.Rooms.CreateRoom:output_type -> moqom.admin.v1.Room
-	7,  // 47: moqom.admin.v1.Rooms.GetRoom:output_type -> moqom.admin.v1.Room
-	14, // 48: moqom.admin.v1.Rooms.ListRooms:output_type -> moqom.admin.v1.ListRoomsResponse
-	7,  // 49: moqom.admin.v1.Rooms.UpdateRoomPolicy:output_type -> moqom.admin.v1.Room
-	7,  // 50: moqom.admin.v1.Rooms.CloseRoom:output_type -> moqom.admin.v1.Room
-	18, // 51: moqom.admin.v1.Rooms.ListParticipants:output_type -> moqom.admin.v1.ListParticipantsResponse
-	8,  // 52: moqom.admin.v1.Rooms.GetParticipant:output_type -> moqom.admin.v1.Participant
-	10, // 53: moqom.admin.v1.Rooms.AttachWatchdog:output_type -> moqom.admin.v1.Watchdog
-	10, // 54: moqom.admin.v1.Rooms.DetachWatchdog:output_type -> moqom.admin.v1.Watchdog
-	23, // 55: moqom.admin.v1.Rooms.ListWatchdogs:output_type -> moqom.admin.v1.ListWatchdogsResponse
-	46, // [46:56] is the sub-list for method output_type
-	36, // [36:46] is the sub-list for method input_type
-	36, // [36:36] is the sub-list for extension type_name
-	36, // [36:36] is the sub-list for extension extendee
-	0,  // [0:36] is the sub-list for field type_name
+	2,  // 2: moqom.admin.v1.RoomPolicy.e2ee:type_name -> moqom.admin.v1.E2EEPolicy
+	3,  // 3: moqom.admin.v1.RoomPolicy.direct_paths:type_name -> moqom.admin.v1.DirectPaths
+	8,  // 4: moqom.admin.v1.Room.policy:type_name -> moqom.admin.v1.RoomPolicy
+	0,  // 5: moqom.admin.v1.Room.lifecycle:type_name -> moqom.admin.v1.RoomLifecycle
+	26, // 6: moqom.admin.v1.Room.starts_at:type_name -> google.protobuf.Timestamp
+	26, // 7: moqom.admin.v1.Room.created_at:type_name -> google.protobuf.Timestamp
+	26, // 8: moqom.admin.v1.Room.ended_at:type_name -> google.protobuf.Timestamp
+	27, // 9: moqom.admin.v1.Room.acting_host:type_name -> moqom.admin.v1.Identity
+	11, // 10: moqom.admin.v1.Room.audiences:type_name -> moqom.admin.v1.Audience
+	27, // 11: moqom.admin.v1.Participant.identity:type_name -> moqom.admin.v1.Identity
+	28, // 12: moqom.admin.v1.Participant.grants:type_name -> moqom.admin.v1.Grants
+	29, // 13: moqom.admin.v1.Participant.presence:type_name -> moqom.admin.v1.Presence
+	30, // 14: moqom.admin.v1.Participant.self_muted:type_name -> moqom.admin.v1.MediaKind
+	30, // 15: moqom.admin.v1.Participant.forced_muted_for_everyone:type_name -> moqom.admin.v1.MediaKind
+	30, // 16: moqom.admin.v1.Participant.forced_muted_for_audience:type_name -> moqom.admin.v1.MediaKind
+	26, // 17: moqom.admin.v1.Participant.joined_at:type_name -> google.protobuf.Timestamp
+	4,  // 18: moqom.admin.v1.Watchdog.kind:type_name -> moqom.admin.v1.WatchdogKind
+	5,  // 19: moqom.admin.v1.Watchdog.operated_by:type_name -> moqom.admin.v1.WatchdogOperator
+	6,  // 20: moqom.admin.v1.Watchdog.health:type_name -> moqom.admin.v1.WatchdogHealth
+	26, // 21: moqom.admin.v1.Watchdog.attached_at:type_name -> google.protobuf.Timestamp
+	8,  // 22: moqom.admin.v1.CreateRoomRequest.policy:type_name -> moqom.admin.v1.RoomPolicy
+	26, // 23: moqom.admin.v1.CreateRoomRequest.starts_at:type_name -> google.protobuf.Timestamp
+	31, // 24: moqom.admin.v1.CreateRoomRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	0,  // 25: moqom.admin.v1.ListRoomsRequest.lifecycle:type_name -> moqom.admin.v1.RoomLifecycle
+	9,  // 26: moqom.admin.v1.ListRoomsResponse.rooms:type_name -> moqom.admin.v1.Room
+	8,  // 27: moqom.admin.v1.UpdateRoomPolicyRequest.policy:type_name -> moqom.admin.v1.RoomPolicy
+	31, // 28: moqom.admin.v1.UpdateRoomPolicyRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	32, // 29: moqom.admin.v1.CloseRoomRequest.code:type_name -> moqom.admin.v1.ModerationCode
+	31, // 30: moqom.admin.v1.CloseRoomRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	10, // 31: moqom.admin.v1.ListParticipantsResponse.participants:type_name -> moqom.admin.v1.Participant
+	27, // 32: moqom.admin.v1.GetParticipantRequest.identity:type_name -> moqom.admin.v1.Identity
+	4,  // 33: moqom.admin.v1.AttachWatchdogRequest.kind:type_name -> moqom.admin.v1.WatchdogKind
+	5,  // 34: moqom.admin.v1.AttachWatchdogRequest.operated_by:type_name -> moqom.admin.v1.WatchdogOperator
+	31, // 35: moqom.admin.v1.AttachWatchdogRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	31, // 36: moqom.admin.v1.DetachWatchdogRequest.actor:type_name -> moqom.admin.v1.ActorContext
+	12, // 37: moqom.admin.v1.ListWatchdogsResponse.watchdogs:type_name -> moqom.admin.v1.Watchdog
+	13, // 38: moqom.admin.v1.Rooms.CreateRoom:input_type -> moqom.admin.v1.CreateRoomRequest
+	14, // 39: moqom.admin.v1.Rooms.GetRoom:input_type -> moqom.admin.v1.GetRoomRequest
+	15, // 40: moqom.admin.v1.Rooms.ListRooms:input_type -> moqom.admin.v1.ListRoomsRequest
+	17, // 41: moqom.admin.v1.Rooms.UpdateRoomPolicy:input_type -> moqom.admin.v1.UpdateRoomPolicyRequest
+	18, // 42: moqom.admin.v1.Rooms.CloseRoom:input_type -> moqom.admin.v1.CloseRoomRequest
+	19, // 43: moqom.admin.v1.Rooms.ListParticipants:input_type -> moqom.admin.v1.ListParticipantsRequest
+	21, // 44: moqom.admin.v1.Rooms.GetParticipant:input_type -> moqom.admin.v1.GetParticipantRequest
+	22, // 45: moqom.admin.v1.Rooms.AttachWatchdog:input_type -> moqom.admin.v1.AttachWatchdogRequest
+	23, // 46: moqom.admin.v1.Rooms.DetachWatchdog:input_type -> moqom.admin.v1.DetachWatchdogRequest
+	24, // 47: moqom.admin.v1.Rooms.ListWatchdogs:input_type -> moqom.admin.v1.ListWatchdogsRequest
+	9,  // 48: moqom.admin.v1.Rooms.CreateRoom:output_type -> moqom.admin.v1.Room
+	9,  // 49: moqom.admin.v1.Rooms.GetRoom:output_type -> moqom.admin.v1.Room
+	16, // 50: moqom.admin.v1.Rooms.ListRooms:output_type -> moqom.admin.v1.ListRoomsResponse
+	9,  // 51: moqom.admin.v1.Rooms.UpdateRoomPolicy:output_type -> moqom.admin.v1.Room
+	9,  // 52: moqom.admin.v1.Rooms.CloseRoom:output_type -> moqom.admin.v1.Room
+	20, // 53: moqom.admin.v1.Rooms.ListParticipants:output_type -> moqom.admin.v1.ListParticipantsResponse
+	10, // 54: moqom.admin.v1.Rooms.GetParticipant:output_type -> moqom.admin.v1.Participant
+	12, // 55: moqom.admin.v1.Rooms.AttachWatchdog:output_type -> moqom.admin.v1.Watchdog
+	12, // 56: moqom.admin.v1.Rooms.DetachWatchdog:output_type -> moqom.admin.v1.Watchdog
+	25, // 57: moqom.admin.v1.Rooms.ListWatchdogs:output_type -> moqom.admin.v1.ListWatchdogsResponse
+	48, // [48:58] is the sub-list for method output_type
+	38, // [38:48] is the sub-list for method input_type
+	38, // [38:38] is the sub-list for extension type_name
+	38, // [38:38] is the sub-list for extension extendee
+	0,  // [0:38] is the sub-list for field type_name
 }
 
 func init() { file_moqom_admin_v1_rooms_proto_init() }
@@ -2208,7 +2374,7 @@ func file_moqom_admin_v1_rooms_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moqom_admin_v1_rooms_proto_rawDesc), len(file_moqom_admin_v1_rooms_proto_rawDesc)),
-			NumEnums:      5,
+			NumEnums:      7,
 			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,

@@ -120,11 +120,11 @@ type PolicyUpdate struct {
 
 	// Fields names which parts of Policy to apply, using the proto field names:
 	// "age_gate", "recording", "max_participants", "stage_slots",
-	// "watchdog_limit".
+	// "watchdog_limit", "e2ee".
 	//
 	// Leaving it empty applies all of them, which is a read-modify-write and will
 	// clobber a concurrent change. Naming the fields you meant to change is almost
-	// always what you want.
+	// always what you want. E2EE is required whatever the write says.
 	Fields []string
 
 	Actor Actor
