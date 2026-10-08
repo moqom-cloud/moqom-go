@@ -903,6 +903,61 @@ func (x *ActorContext) GetIdempotencyKey() string {
 	return ""
 }
 
+// What a room allows of direct (device-to-device) paths, as stated to a client
+// with its token. See `RoomPolicy.direct_paths`.
+type DirectGrant struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Allowed bool                   `protobuf:"varint,1,opt,name=allowed,proto3" json:"allowed,omitempty"`
+	// The most participants the room may have and still use direct paths.
+	MaxParticipants uint32 `protobuf:"varint,2,opt,name=max_participants,json=maxParticipants,proto3" json:"max_participants,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DirectGrant) Reset() {
+	*x = DirectGrant{}
+	mi := &file_moqom_admin_v1_common_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DirectGrant) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DirectGrant) ProtoMessage() {}
+
+func (x *DirectGrant) ProtoReflect() protoreflect.Message {
+	mi := &file_moqom_admin_v1_common_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DirectGrant.ProtoReflect.Descriptor instead.
+func (*DirectGrant) Descriptor() ([]byte, []int) {
+	return file_moqom_admin_v1_common_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *DirectGrant) GetAllowed() bool {
+	if x != nil {
+		return x.Allowed
+	}
+	return false
+}
+
+func (x *DirectGrant) GetMaxParticipants() uint32 {
+	if x != nil {
+		return x.MaxParticipants
+	}
+	return 0
+}
+
 var File_moqom_admin_v1_common_proto protoreflect.FileDescriptor
 
 const file_moqom_admin_v1_common_proto_rawDesc = "" +
@@ -928,7 +983,10 @@ const file_moqom_admin_v1_common_proto_rawDesc = "" +
 	"\fon_behalf_of\x18\x01 \x01(\tR\n" +
 	"onBehalfOf\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12'\n" +
-	"\x0fidempotency_key\x18\x03 \x01(\tR\x0eidempotencyKey*{\n" +
+	"\x0fidempotency_key\x18\x03 \x01(\tR\x0eidempotencyKey\"R\n" +
+	"\vDirectGrant\x12\x18\n" +
+	"\aallowed\x18\x01 \x01(\bR\aallowed\x12)\n" +
+	"\x10max_participants\x18\x02 \x01(\rR\x0fmaxParticipants*{\n" +
 	"\tTimeTrust\x12\x1a\n" +
 	"\x16TIME_TRUST_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13TIME_TRUST_FALLBACK\x10\x01\x12\x1b\n" +
@@ -1007,7 +1065,7 @@ func file_moqom_admin_v1_common_proto_rawDescGZIP() []byte {
 }
 
 var file_moqom_admin_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_moqom_admin_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_moqom_admin_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_moqom_admin_v1_common_proto_goTypes = []any{
 	(TimeTrust)(0),                // 0: moqom.admin.v1.TimeTrust
 	(PublishScope)(0),             // 1: moqom.admin.v1.PublishScope
@@ -1021,10 +1079,11 @@ var file_moqom_admin_v1_common_proto_goTypes = []any{
 	(*ParticipantRef)(nil),        // 9: moqom.admin.v1.ParticipantRef
 	(*Grants)(nil),                // 10: moqom.admin.v1.Grants
 	(*ActorContext)(nil),          // 11: moqom.admin.v1.ActorContext
-	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
+	(*DirectGrant)(nil),           // 12: moqom.admin.v1.DirectGrant
+	(*timestamppb.Timestamp)(nil), // 13: google.protobuf.Timestamp
 }
 var file_moqom_admin_v1_common_proto_depIdxs = []int32{
-	12, // 0: moqom.admin.v1.Timecode.at:type_name -> google.protobuf.Timestamp
+	13, // 0: moqom.admin.v1.Timecode.at:type_name -> google.protobuf.Timestamp
 	0,  // 1: moqom.admin.v1.Timecode.trust:type_name -> moqom.admin.v1.TimeTrust
 	1,  // 2: moqom.admin.v1.Grants.publish:type_name -> moqom.admin.v1.PublishScope
 	2,  // 3: moqom.admin.v1.Grants.moderation:type_name -> moqom.admin.v1.Capability
@@ -1046,7 +1105,7 @@ func file_moqom_admin_v1_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moqom_admin_v1_common_proto_rawDesc), len(file_moqom_admin_v1_common_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

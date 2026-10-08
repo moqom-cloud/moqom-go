@@ -479,7 +479,39 @@ func policyToProto(policy Policy) *adminpb.RoomPolicy {
 		StageSlots:      policy.StageSlots,
 		WatchdogLimit:   policy.WatchdogLimit,
 		E2Ee:            e2eeToProto(policy.E2EE),
+
+		DirectPaths:           directToProto(policy.DirectPaths),
+		MaxDirectParticipants: policy.MaxDirectParticipants,
 	}
+}
+
+func directToProto(direct DirectPaths) adminpb.DirectPaths {
+	switch direct {
+	case DirectAllowed:
+		return adminpb.DirectPaths_DIRECT_PATHS_ALLOWED
+	case DirectRelayOnly:
+		return adminpb.DirectPaths_DIRECT_PATHS_RELAY_ONLY
+	default:
+		return adminpb.DirectPaths_DIRECT_PATHS_UNSPECIFIED
+	}
+}
+
+func directFromProto(direct adminpb.DirectPaths) DirectPaths {
+	switch direct {
+	case adminpb.DirectPaths_DIRECT_PATHS_RELAY_ONLY:
+		return DirectRelayOnly
+	case adminpb.DirectPaths_DIRECT_PATHS_ALLOWED:
+		return DirectAllowed
+	default:
+		return ""
+	}
+}
+
+func directGrantFromProto(grant *adminpb.DirectGrant) *DirectGrant {
+	if grant == nil {
+		return nil
+	}
+	return &DirectGrant{Allowed: grant.GetAllowed(), MaxParticipants: grant.GetMaxParticipants()}
 }
 
 func policyFromProto(wire *adminpb.RoomPolicy) Policy {
@@ -497,6 +529,9 @@ func policyFromProto(wire *adminpb.RoomPolicy) Policy {
 		StageSlots:      wire.GetStageSlots(),
 		WatchdogLimit:   wire.GetWatchdogLimit(),
 		E2EE:            e2eeFromProto(wire.GetE2Ee()),
+
+		DirectPaths:           directFromProto(wire.GetDirectPaths()),
+		MaxDirectParticipants: wire.GetMaxDirectParticipants(),
 	}
 }
 

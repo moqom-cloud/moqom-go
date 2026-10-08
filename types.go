@@ -201,6 +201,32 @@ type Policy struct {
 	// E2EE is always E2EERequired on a room read back from the server. Empty
 	// means the same when writing.
 	E2EE E2EEPolicy
+
+	// DirectPaths is whether participants may carry media device to device,
+	// which tells each of them the others' IP addresses. Empty means allowed.
+	DirectPaths DirectPaths
+
+	// MaxDirectParticipants is the most participants the room may have and
+	// still use direct paths: 2 to 4, or zero for 4.
+	MaxDirectParticipants uint32
+}
+
+// DirectPaths is whether a room's participants may carry media device to
+// device rather than through a relay. Even where allowed, only an end-to-end
+// encrypted room within its limit, with no watchdog and no audience, where
+// every participant has opted in, does.
+type DirectPaths string
+
+const (
+	DirectAllowed   DirectPaths = "allowed"
+	DirectRelayOnly DirectPaths = "relay_only"
+)
+
+// DirectGrant is what a token's room allows of direct paths. Hand it to the
+// client with the token; MoqomKit reads it as `direct` beside `token`.
+type DirectGrant struct {
+	Allowed         bool
+	MaxParticipants uint32
 }
 
 // Room is a room's state.
@@ -444,6 +470,10 @@ type Token struct {
 
 	// KeyID is which signing key was used, matching a VerificationKey.
 	KeyID string
+
+	// Direct is what the token's room allows of direct paths; nil for a token
+	// that names no room.
+	Direct *DirectGrant
 }
 
 // VerificationKey is a public key tokens can be verified with.
