@@ -91,6 +91,7 @@ type Client struct {
 	moderation adminpb.ModerationClient
 	tokens     adminpb.TokensClient
 	events     adminpb.EventsClient
+	pools      adminpb.RelayPoolsClient
 }
 
 // Actor is who an action is attributed to, and why.
@@ -313,7 +314,12 @@ func Dial(target string, options ...Option) (*Client, error) {
 		case settings.insecure:
 			transport = insecure.NewCredentials()
 		case transport == nil:
-			transport = credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS13})
+			// ML-KEM-1024, hybrid with P-384: the control plane accepts
+			// nothing less from a backend.
+			transport = credentials.NewTLS(&tls.Config{
+				MinVersion:       tls.VersionTLS13,
+				CurvePreferences: []tls.CurveID{tls.SecP384r1MLKEM1024},
+			})
 		}
 
 		dialOptions := []grpc.DialOption{
@@ -351,6 +357,7 @@ func Dial(target string, options ...Option) (*Client, error) {
 		moderation: adminpb.NewModerationClient(conn),
 		tokens:     adminpb.NewTokensClient(conn),
 		events:     adminpb.NewEventsClient(conn),
+		pools:      adminpb.NewRelayPoolsClient(conn),
 	}, nil
 }
 

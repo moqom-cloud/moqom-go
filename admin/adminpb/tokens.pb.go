@@ -265,7 +265,12 @@ type MintClientTokenResponse struct {
 	KeyId string `protobuf:"bytes,4,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
 	// What the token's room allows of direct paths, for the backend to hand to
 	// the client with the token. Unset for a token that names no room.
-	Direct        *DirectGrant `protobuf:"bytes,5,opt,name=direct,proto3" json:"direct,omitempty"`
+	Direct *DirectGrant `protobuf:"bytes,5,opt,name=direct,proto3" json:"direct,omitempty"`
+	// The relays a token for a private tenant must dial, as `host:port`: its
+	// relay pool's. Empty for the shared fleet, which is reached by its usual
+	// name. Every other relay refuses the token with `wrong_pool`, so a client
+	// given these dials one of them and nothing else.
+	Relays        []string `protobuf:"bytes,6,rep,name=relays,proto3" json:"relays,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -335,6 +340,13 @@ func (x *MintClientTokenResponse) GetDirect() *DirectGrant {
 	return nil
 }
 
+func (x *MintClientTokenResponse) GetRelays() []string {
+	if x != nil {
+		return x.Relays
+	}
+	return nil
+}
+
 type ListVerificationKeysRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Tenant        string                 `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
@@ -382,9 +394,8 @@ func (x *ListVerificationKeysRequest) GetTenant() string {
 type VerificationKey struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	KeyId string                 `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
-	// The algorithm, as a JOSE identifier. `EdDSA` over Ed25519 today: small
-	// signatures, fast verification on a relay's hot path, and no curve
-	// parameters to get wrong.
+	// The algorithm, as a JOSE identifier: `ML-DSA-87`, the only one tokens
+	// are signed or verified with.
 	Algorithm string `protobuf:"bytes,2,opt,name=algorithm,proto3" json:"algorithm,omitempty"`
 	// The public key as a JWK.
 	Jwk       string                 `protobuf:"bytes,3,opt,name=jwk,proto3" json:"jwk,omitempty"`
@@ -515,6 +526,251 @@ func (x *ListVerificationKeysResponse) GetBinding() TokenBinding {
 	return TokenBinding_TOKEN_BINDING_UNSPECIFIED
 }
 
+type SetAppleSignInRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Tenant string                 `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	// The Apple team the apps are signed by. App Attest keys attested for any
+	// other team are refused.
+	TeamId string `protobuf:"bytes,2,opt,name=team_id,json=teamId,proto3" json:"team_id,omitempty"`
+	// The apps. Apple's identity token must name one as its audience. Empty
+	// turns Apple sign-in off for the tenant.
+	BundleIds []string `protobuf:"bytes,3,rep,name=bundle_ids,json=bundleIds,proto3" json:"bundle_ids,omitempty"`
+	// The existing rooms a signed-in person may be minted for.
+	Rooms []string `protobuf:"bytes,4,rep,name=rooms,proto3" json:"rooms,omitempty"`
+	// What they may publish there.
+	Publish []PublishScope `protobuf:"varint,5,rep,packed,name=publish,proto3,enum=moqom.admin.v1.PublishScope" json:"publish,omitempty"`
+	// Accept App Attest keys from Apple's development environment, for builds
+	// run from Xcode. Leave off in production.
+	AllowDevelopment bool `protobuf:"varint,6,opt,name=allow_development,json=allowDevelopment,proto3" json:"allow_development,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *SetAppleSignInRequest) Reset() {
+	*x = SetAppleSignInRequest{}
+	mi := &file_moqom_admin_v1_tokens_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetAppleSignInRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetAppleSignInRequest) ProtoMessage() {}
+
+func (x *SetAppleSignInRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moqom_admin_v1_tokens_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetAppleSignInRequest.ProtoReflect.Descriptor instead.
+func (*SetAppleSignInRequest) Descriptor() ([]byte, []int) {
+	return file_moqom_admin_v1_tokens_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SetAppleSignInRequest) GetTenant() string {
+	if x != nil {
+		return x.Tenant
+	}
+	return ""
+}
+
+func (x *SetAppleSignInRequest) GetTeamId() string {
+	if x != nil {
+		return x.TeamId
+	}
+	return ""
+}
+
+func (x *SetAppleSignInRequest) GetBundleIds() []string {
+	if x != nil {
+		return x.BundleIds
+	}
+	return nil
+}
+
+func (x *SetAppleSignInRequest) GetRooms() []string {
+	if x != nil {
+		return x.Rooms
+	}
+	return nil
+}
+
+func (x *SetAppleSignInRequest) GetPublish() []PublishScope {
+	if x != nil {
+		return x.Publish
+	}
+	return nil
+}
+
+func (x *SetAppleSignInRequest) GetAllowDevelopment() bool {
+	if x != nil {
+		return x.AllowDevelopment
+	}
+	return false
+}
+
+type GetAppleSignInRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tenant        string                 `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAppleSignInRequest) Reset() {
+	*x = GetAppleSignInRequest{}
+	mi := &file_moqom_admin_v1_tokens_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAppleSignInRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAppleSignInRequest) ProtoMessage() {}
+
+func (x *GetAppleSignInRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moqom_admin_v1_tokens_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAppleSignInRequest.ProtoReflect.Descriptor instead.
+func (*GetAppleSignInRequest) Descriptor() ([]byte, []int) {
+	return file_moqom_admin_v1_tokens_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetAppleSignInRequest) GetTenant() string {
+	if x != nil {
+		return x.Tenant
+	}
+	return ""
+}
+
+type AppleSignIn struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Tenant           string                 `protobuf:"bytes,1,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	TeamId           string                 `protobuf:"bytes,2,opt,name=team_id,json=teamId,proto3" json:"team_id,omitempty"`
+	BundleIds        []string               `protobuf:"bytes,3,rep,name=bundle_ids,json=bundleIds,proto3" json:"bundle_ids,omitempty"`
+	Rooms            []string               `protobuf:"bytes,4,rep,name=rooms,proto3" json:"rooms,omitempty"`
+	Publish          []PublishScope         `protobuf:"varint,5,rep,packed,name=publish,proto3,enum=moqom.admin.v1.PublishScope" json:"publish,omitempty"`
+	AllowDevelopment bool                   `protobuf:"varint,6,opt,name=allow_development,json=allowDevelopment,proto3" json:"allow_development,omitempty"`
+	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	// Where devices sign in: the control plane's public listener.
+	SignInPath    string `protobuf:"bytes,8,opt,name=sign_in_path,json=signInPath,proto3" json:"sign_in_path,omitempty"`
+	TokenPath     string `protobuf:"bytes,9,opt,name=token_path,json=tokenPath,proto3" json:"token_path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppleSignIn) Reset() {
+	*x = AppleSignIn{}
+	mi := &file_moqom_admin_v1_tokens_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppleSignIn) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppleSignIn) ProtoMessage() {}
+
+func (x *AppleSignIn) ProtoReflect() protoreflect.Message {
+	mi := &file_moqom_admin_v1_tokens_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppleSignIn.ProtoReflect.Descriptor instead.
+func (*AppleSignIn) Descriptor() ([]byte, []int) {
+	return file_moqom_admin_v1_tokens_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *AppleSignIn) GetTenant() string {
+	if x != nil {
+		return x.Tenant
+	}
+	return ""
+}
+
+func (x *AppleSignIn) GetTeamId() string {
+	if x != nil {
+		return x.TeamId
+	}
+	return ""
+}
+
+func (x *AppleSignIn) GetBundleIds() []string {
+	if x != nil {
+		return x.BundleIds
+	}
+	return nil
+}
+
+func (x *AppleSignIn) GetRooms() []string {
+	if x != nil {
+		return x.Rooms
+	}
+	return nil
+}
+
+func (x *AppleSignIn) GetPublish() []PublishScope {
+	if x != nil {
+		return x.Publish
+	}
+	return nil
+}
+
+func (x *AppleSignIn) GetAllowDevelopment() bool {
+	if x != nil {
+		return x.AllowDevelopment
+	}
+	return false
+}
+
+func (x *AppleSignIn) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *AppleSignIn) GetSignInPath() string {
+	if x != nil {
+		return x.SignInPath
+	}
+	return ""
+}
+
+func (x *AppleSignIn) GetTokenPath() string {
+	if x != nil {
+		return x.TokenPath
+	}
+	return ""
+}
+
 var File_moqom_admin_v1_tokens_proto protoreflect.FileDescriptor
 
 const file_moqom_admin_v1_tokens_proto_rawDesc = "" +
@@ -532,14 +788,15 @@ const file_moqom_admin_v1_tokens_proto_rawDesc = "" +
 	"\fage_verified\x18\t \x01(\bR\vageVerified\x12\x1f\n" +
 	"\varrived_via\x18\n" +
 	" \x01(\tR\n" +
-	"arrivedVia\"\xec\x01\n" +
+	"arrivedVia\"\x84\x02\n" +
 	"\x17MintClientTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
 	"\n" +
 	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x124\n" +
 	"\bidentity\x18\x03 \x01(\v2\x18.moqom.admin.v1.IdentityR\bidentity\x12\x15\n" +
 	"\x06key_id\x18\x04 \x01(\tR\x05keyId\x123\n" +
-	"\x06direct\x18\x05 \x01(\v2\x1b.moqom.admin.v1.DirectGrantR\x06direct\"5\n" +
+	"\x06direct\x18\x05 \x01(\v2\x1b.moqom.admin.v1.DirectGrantR\x06direct\x12\x16\n" +
+	"\x06relays\x18\x06 \x03(\tR\x06relays\"5\n" +
 	"\x1bListVerificationKeysRequest\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\"\xce\x01\n" +
 	"\x0fVerificationKey\x12\x15\n" +
@@ -552,14 +809,40 @@ const file_moqom_admin_v1_tokens_proto_rawDesc = "" +
 	"retires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tretiresAt\"\x8b\x01\n" +
 	"\x1cListVerificationKeysResponse\x123\n" +
 	"\x04keys\x18\x01 \x03(\v2\x1f.moqom.admin.v1.VerificationKeyR\x04keys\x126\n" +
-	"\abinding\x18\x02 \x01(\x0e2\x1c.moqom.admin.v1.TokenBindingR\abinding*_\n" +
+	"\abinding\x18\x02 \x01(\x0e2\x1c.moqom.admin.v1.TokenBindingR\abinding\"\xe2\x01\n" +
+	"\x15SetAppleSignInRequest\x12\x16\n" +
+	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x17\n" +
+	"\ateam_id\x18\x02 \x01(\tR\x06teamId\x12\x1d\n" +
+	"\n" +
+	"bundle_ids\x18\x03 \x03(\tR\tbundleIds\x12\x14\n" +
+	"\x05rooms\x18\x04 \x03(\tR\x05rooms\x126\n" +
+	"\apublish\x18\x05 \x03(\x0e2\x1c.moqom.admin.v1.PublishScopeR\apublish\x12+\n" +
+	"\x11allow_development\x18\x06 \x01(\bR\x10allowDevelopment\"/\n" +
+	"\x15GetAppleSignInRequest\x12\x16\n" +
+	"\x06tenant\x18\x01 \x01(\tR\x06tenant\"\xd4\x02\n" +
+	"\vAppleSignIn\x12\x16\n" +
+	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x17\n" +
+	"\ateam_id\x18\x02 \x01(\tR\x06teamId\x12\x1d\n" +
+	"\n" +
+	"bundle_ids\x18\x03 \x03(\tR\tbundleIds\x12\x14\n" +
+	"\x05rooms\x18\x04 \x03(\tR\x05rooms\x126\n" +
+	"\apublish\x18\x05 \x03(\x0e2\x1c.moqom.admin.v1.PublishScopeR\apublish\x12+\n" +
+	"\x11allow_development\x18\x06 \x01(\bR\x10allowDevelopment\x129\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12 \n" +
+	"\fsign_in_path\x18\b \x01(\tR\n" +
+	"signInPath\x12\x1d\n" +
+	"\n" +
+	"token_path\x18\t \x01(\tR\ttokenPath*_\n" +
 	"\fTokenBinding\x12\x1d\n" +
 	"\x19TOKEN_BINDING_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14TOKEN_BINDING_BEARER\x10\x01\x12\x16\n" +
-	"\x12TOKEN_BINDING_DPOP\x10\x022\xdf\x01\n" +
+	"\x12TOKEN_BINDING_DPOP\x10\x022\x8b\x03\n" +
 	"\x06Tokens\x12b\n" +
 	"\x0fMintClientToken\x12&.moqom.admin.v1.MintClientTokenRequest\x1a'.moqom.admin.v1.MintClientTokenResponse\x12q\n" +
-	"\x14ListVerificationKeys\x12+.moqom.admin.v1.ListVerificationKeysRequest\x1a,.moqom.admin.v1.ListVerificationKeysResponseB7Z5github.com/moqom-cloud/moqom-go/admin/adminpb;adminpbb\x06proto3"
+	"\x14ListVerificationKeys\x12+.moqom.admin.v1.ListVerificationKeysRequest\x1a,.moqom.admin.v1.ListVerificationKeysResponse\x12T\n" +
+	"\x0eSetAppleSignIn\x12%.moqom.admin.v1.SetAppleSignInRequest\x1a\x1b.moqom.admin.v1.AppleSignIn\x12T\n" +
+	"\x0eGetAppleSignIn\x12%.moqom.admin.v1.GetAppleSignInRequest\x1a\x1b.moqom.admin.v1.AppleSignInB7Z5github.com/moqom-cloud/moqom-go/admin/adminpb;adminpbb\x06proto3"
 
 var (
 	file_moqom_admin_v1_tokens_proto_rawDescOnce sync.Once
@@ -574,7 +857,7 @@ func file_moqom_admin_v1_tokens_proto_rawDescGZIP() []byte {
 }
 
 var file_moqom_admin_v1_tokens_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_moqom_admin_v1_tokens_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_moqom_admin_v1_tokens_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_moqom_admin_v1_tokens_proto_goTypes = []any{
 	(TokenBinding)(0),                    // 0: moqom.admin.v1.TokenBinding
 	(*MintClientTokenRequest)(nil),       // 1: moqom.admin.v1.MintClientTokenRequest
@@ -582,33 +865,44 @@ var file_moqom_admin_v1_tokens_proto_goTypes = []any{
 	(*ListVerificationKeysRequest)(nil),  // 3: moqom.admin.v1.ListVerificationKeysRequest
 	(*VerificationKey)(nil),              // 4: moqom.admin.v1.VerificationKey
 	(*ListVerificationKeysResponse)(nil), // 5: moqom.admin.v1.ListVerificationKeysResponse
-	(*Grants)(nil),                       // 6: moqom.admin.v1.Grants
-	(CapabilityPreset)(0),                // 7: moqom.admin.v1.CapabilityPreset
-	(*durationpb.Duration)(nil),          // 8: google.protobuf.Duration
-	(*timestamppb.Timestamp)(nil),        // 9: google.protobuf.Timestamp
-	(*Identity)(nil),                     // 10: moqom.admin.v1.Identity
-	(*DirectGrant)(nil),                  // 11: moqom.admin.v1.DirectGrant
+	(*SetAppleSignInRequest)(nil),        // 6: moqom.admin.v1.SetAppleSignInRequest
+	(*GetAppleSignInRequest)(nil),        // 7: moqom.admin.v1.GetAppleSignInRequest
+	(*AppleSignIn)(nil),                  // 8: moqom.admin.v1.AppleSignIn
+	(*Grants)(nil),                       // 9: moqom.admin.v1.Grants
+	(CapabilityPreset)(0),                // 10: moqom.admin.v1.CapabilityPreset
+	(*durationpb.Duration)(nil),          // 11: google.protobuf.Duration
+	(*timestamppb.Timestamp)(nil),        // 12: google.protobuf.Timestamp
+	(*Identity)(nil),                     // 13: moqom.admin.v1.Identity
+	(*DirectGrant)(nil),                  // 14: moqom.admin.v1.DirectGrant
+	(PublishScope)(0),                    // 15: moqom.admin.v1.PublishScope
 }
 var file_moqom_admin_v1_tokens_proto_depIdxs = []int32{
-	6,  // 0: moqom.admin.v1.MintClientTokenRequest.grants:type_name -> moqom.admin.v1.Grants
-	7,  // 1: moqom.admin.v1.MintClientTokenRequest.preset:type_name -> moqom.admin.v1.CapabilityPreset
-	8,  // 2: moqom.admin.v1.MintClientTokenRequest.lifetime:type_name -> google.protobuf.Duration
-	9,  // 3: moqom.admin.v1.MintClientTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	10, // 4: moqom.admin.v1.MintClientTokenResponse.identity:type_name -> moqom.admin.v1.Identity
-	11, // 5: moqom.admin.v1.MintClientTokenResponse.direct:type_name -> moqom.admin.v1.DirectGrant
-	9,  // 6: moqom.admin.v1.VerificationKey.not_before:type_name -> google.protobuf.Timestamp
-	9,  // 7: moqom.admin.v1.VerificationKey.retires_at:type_name -> google.protobuf.Timestamp
+	9,  // 0: moqom.admin.v1.MintClientTokenRequest.grants:type_name -> moqom.admin.v1.Grants
+	10, // 1: moqom.admin.v1.MintClientTokenRequest.preset:type_name -> moqom.admin.v1.CapabilityPreset
+	11, // 2: moqom.admin.v1.MintClientTokenRequest.lifetime:type_name -> google.protobuf.Duration
+	12, // 3: moqom.admin.v1.MintClientTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	13, // 4: moqom.admin.v1.MintClientTokenResponse.identity:type_name -> moqom.admin.v1.Identity
+	14, // 5: moqom.admin.v1.MintClientTokenResponse.direct:type_name -> moqom.admin.v1.DirectGrant
+	12, // 6: moqom.admin.v1.VerificationKey.not_before:type_name -> google.protobuf.Timestamp
+	12, // 7: moqom.admin.v1.VerificationKey.retires_at:type_name -> google.protobuf.Timestamp
 	4,  // 8: moqom.admin.v1.ListVerificationKeysResponse.keys:type_name -> moqom.admin.v1.VerificationKey
 	0,  // 9: moqom.admin.v1.ListVerificationKeysResponse.binding:type_name -> moqom.admin.v1.TokenBinding
-	1,  // 10: moqom.admin.v1.Tokens.MintClientToken:input_type -> moqom.admin.v1.MintClientTokenRequest
-	3,  // 11: moqom.admin.v1.Tokens.ListVerificationKeys:input_type -> moqom.admin.v1.ListVerificationKeysRequest
-	2,  // 12: moqom.admin.v1.Tokens.MintClientToken:output_type -> moqom.admin.v1.MintClientTokenResponse
-	5,  // 13: moqom.admin.v1.Tokens.ListVerificationKeys:output_type -> moqom.admin.v1.ListVerificationKeysResponse
-	12, // [12:14] is the sub-list for method output_type
-	10, // [10:12] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	15, // 10: moqom.admin.v1.SetAppleSignInRequest.publish:type_name -> moqom.admin.v1.PublishScope
+	15, // 11: moqom.admin.v1.AppleSignIn.publish:type_name -> moqom.admin.v1.PublishScope
+	12, // 12: moqom.admin.v1.AppleSignIn.updated_at:type_name -> google.protobuf.Timestamp
+	1,  // 13: moqom.admin.v1.Tokens.MintClientToken:input_type -> moqom.admin.v1.MintClientTokenRequest
+	3,  // 14: moqom.admin.v1.Tokens.ListVerificationKeys:input_type -> moqom.admin.v1.ListVerificationKeysRequest
+	6,  // 15: moqom.admin.v1.Tokens.SetAppleSignIn:input_type -> moqom.admin.v1.SetAppleSignInRequest
+	7,  // 16: moqom.admin.v1.Tokens.GetAppleSignIn:input_type -> moqom.admin.v1.GetAppleSignInRequest
+	2,  // 17: moqom.admin.v1.Tokens.MintClientToken:output_type -> moqom.admin.v1.MintClientTokenResponse
+	5,  // 18: moqom.admin.v1.Tokens.ListVerificationKeys:output_type -> moqom.admin.v1.ListVerificationKeysResponse
+	8,  // 19: moqom.admin.v1.Tokens.SetAppleSignIn:output_type -> moqom.admin.v1.AppleSignIn
+	8,  // 20: moqom.admin.v1.Tokens.GetAppleSignIn:output_type -> moqom.admin.v1.AppleSignIn
+	17, // [17:21] is the sub-list for method output_type
+	13, // [13:17] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_moqom_admin_v1_tokens_proto_init() }
@@ -623,7 +917,7 @@ func file_moqom_admin_v1_tokens_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moqom_admin_v1_tokens_proto_rawDesc), len(file_moqom_admin_v1_tokens_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

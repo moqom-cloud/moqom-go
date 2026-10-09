@@ -6,7 +6,7 @@ moderates them, and follows what happens in them.
 
 It does not carry media. Nothing here speaks MOQT, and a Go process that wants to
 receive frames — a recorder, a classifier — wants a MOQT subscriber instead. The
-split is deliberate: media needs a QUIC stack, a codec, and a scheduler on the hot
+split is deliberate: media needs a [QUIC](https://www.rfc-editor.org/rfc/rfc9000) stack, a codec, and a scheduler on the hot
 path, and making every backend link all three to change somebody's grants would be
 a poor trade.
 
@@ -123,7 +123,7 @@ a DNS name. Your MOQOM contact issues the identity.
 ## Identity
 
 There are no numeric user IDs and nowhere to put one. A username is a string you
-already have, and a device is derived from the device key's JWK thumbprint — so a
+already have, and a device is derived from the device key's [JWK](https://www.rfc-editor.org/rfc/rfc7517) thumbprint — so a
 device ban and the thumbprint you passed to `MintToken` are the same fact. That is
 what makes migrating from a platform with its own UID space a matter of pointing at
 a new server rather than building a mapping table.

@@ -107,6 +107,7 @@ func (c *Client) MintToken(ctx context.Context, request TokenRequest) (Token, er
 		Identity:  identityFromProto(response.GetIdentity()),
 		KeyID:     response.GetKeyId(),
 		Direct:    directGrantFromProto(response.GetDirect()),
+		Relays:    response.GetRelays(),
 	}, nil
 }
 

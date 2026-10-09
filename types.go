@@ -487,15 +487,19 @@ type Token struct {
 	// Direct is what the token's room allows of direct paths; nil for a token
 	// that names no room.
 	Direct *DirectGrant
+
+	// Relays are the addresses, host:port, a token for a private tenant must
+	// dial: its relay pool's. Empty for the shared fleet. Every other relay
+	// refuses the token, so hand these to the client with it.
+	Relays []string
 }
 
 // VerificationKey is a public key tokens can be verified with.
 type VerificationKey struct {
 	KeyID string
 
-	// Algorithm as a JOSE identifier: ML-DSA-65 (FIPS 204), which every token
-	// is signed with, or EdDSA for an Ed25519 key kept only to verify tokens
-	// issued before the move.
+	// Algorithm as a JOSE identifier: ML-DSA-87 (FIPS 204), which every token
+	// is signed and verified with.
 	Algorithm string
 
 	// JWK is the public key, as JSON.

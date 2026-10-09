@@ -33,6 +33,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Tokens_MintClientToken_FullMethodName      = "/moqom.admin.v1.Tokens/MintClientToken"
 	Tokens_ListVerificationKeys_FullMethodName = "/moqom.admin.v1.Tokens/ListVerificationKeys"
+	Tokens_SetAppleSignIn_FullMethodName       = "/moqom.admin.v1.Tokens/SetAppleSignIn"
+	Tokens_GetAppleSignIn_FullMethodName       = "/moqom.admin.v1.Tokens/GetAppleSignIn"
 )
 
 // TokensClient is the client API for Tokens service.
@@ -46,6 +48,14 @@ type TokensClient interface {
 	// new key is published here, tokens start being signed with it, and the old
 	// one is withdrawn once every token it signed has expired.
 	ListVerificationKeys(ctx context.Context, in *ListVerificationKeysRequest, opts ...grpc.CallOption) (*ListVerificationKeysResponse, error)
+	// Turn on, change or turn off Apple sign-in hosted by MOQOM for a tenant.
+	//
+	// For apps with no backend: the control plane's public listener checks App
+	// Attest and Sign in with Apple and mints for the rooms named here, with the
+	// publish rights named here and never moderation or ownership. It never
+	// creates a room. An owner key only.
+	SetAppleSignIn(ctx context.Context, in *SetAppleSignInRequest, opts ...grpc.CallOption) (*AppleSignIn, error)
+	GetAppleSignIn(ctx context.Context, in *GetAppleSignInRequest, opts ...grpc.CallOption) (*AppleSignIn, error)
 }
 
 type tokensClient struct {
@@ -76,6 +86,26 @@ func (c *tokensClient) ListVerificationKeys(ctx context.Context, in *ListVerific
 	return out, nil
 }
 
+func (c *tokensClient) SetAppleSignIn(ctx context.Context, in *SetAppleSignInRequest, opts ...grpc.CallOption) (*AppleSignIn, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AppleSignIn)
+	err := c.cc.Invoke(ctx, Tokens_SetAppleSignIn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tokensClient) GetAppleSignIn(ctx context.Context, in *GetAppleSignInRequest, opts ...grpc.CallOption) (*AppleSignIn, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AppleSignIn)
+	err := c.cc.Invoke(ctx, Tokens_GetAppleSignIn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TokensServer is the server API for Tokens service.
 // All implementations must embed UnimplementedTokensServer
 // for forward compatibility.
@@ -87,6 +117,14 @@ type TokensServer interface {
 	// new key is published here, tokens start being signed with it, and the old
 	// one is withdrawn once every token it signed has expired.
 	ListVerificationKeys(context.Context, *ListVerificationKeysRequest) (*ListVerificationKeysResponse, error)
+	// Turn on, change or turn off Apple sign-in hosted by MOQOM for a tenant.
+	//
+	// For apps with no backend: the control plane's public listener checks App
+	// Attest and Sign in with Apple and mints for the rooms named here, with the
+	// publish rights named here and never moderation or ownership. It never
+	// creates a room. An owner key only.
+	SetAppleSignIn(context.Context, *SetAppleSignInRequest) (*AppleSignIn, error)
+	GetAppleSignIn(context.Context, *GetAppleSignInRequest) (*AppleSignIn, error)
 	mustEmbedUnimplementedTokensServer()
 }
 
@@ -102,6 +140,12 @@ func (UnimplementedTokensServer) MintClientToken(context.Context, *MintClientTok
 }
 func (UnimplementedTokensServer) ListVerificationKeys(context.Context, *ListVerificationKeysRequest) (*ListVerificationKeysResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListVerificationKeys not implemented")
+}
+func (UnimplementedTokensServer) SetAppleSignIn(context.Context, *SetAppleSignInRequest) (*AppleSignIn, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAppleSignIn not implemented")
+}
+func (UnimplementedTokensServer) GetAppleSignIn(context.Context, *GetAppleSignInRequest) (*AppleSignIn, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAppleSignIn not implemented")
 }
 func (UnimplementedTokensServer) mustEmbedUnimplementedTokensServer() {}
 func (UnimplementedTokensServer) testEmbeddedByValue()                {}
@@ -160,6 +204,42 @@ func _Tokens_ListVerificationKeys_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Tokens_SetAppleSignIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAppleSignInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokensServer).SetAppleSignIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Tokens_SetAppleSignIn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokensServer).SetAppleSignIn(ctx, req.(*SetAppleSignInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Tokens_GetAppleSignIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAppleSignInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TokensServer).GetAppleSignIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Tokens_GetAppleSignIn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TokensServer).GetAppleSignIn(ctx, req.(*GetAppleSignInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Tokens_ServiceDesc is the grpc.ServiceDesc for Tokens service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -174,6 +254,14 @@ var Tokens_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListVerificationKeys",
 			Handler:    _Tokens_ListVerificationKeys_Handler,
+		},
+		{
+			MethodName: "SetAppleSignIn",
+			Handler:    _Tokens_SetAppleSignIn_Handler,
+		},
+		{
+			MethodName: "GetAppleSignIn",
+			Handler:    _Tokens_GetAppleSignIn_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
